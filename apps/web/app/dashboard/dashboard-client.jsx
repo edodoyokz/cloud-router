@@ -49,6 +49,16 @@ const codeStyle = {
   fontSize: 13
 };
 
+function draftStepsFromPreset(presetData) {
+  return (presetData?.steps || []).map((step) => ({
+    provider_connection_id: step.provider_connection_id,
+    display_name: step.display_name,
+    status: step.status,
+    health: step.health,
+    model_alias: step.model_alias || ''
+  }));
+}
+
 export default function DashboardClient({ routerBaseUrl }) {
   const normalizedRouterBaseUrl = useMemo(() => normalizeRouterBaseUrl(routerBaseUrl), [routerBaseUrl]);
   const [providerForm, setProviderForm] = useState({
@@ -72,6 +82,13 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [usage, setUsage] = useState(null);
   const [usageStatus, setUsageStatus] = useState(null);
   const [loadingUsage, setLoadingUsage] = useState(false);
+  const [preset, setPreset] = useState(null);
+  const [presetDraftSteps, setPresetDraftSteps] = useState([]);
+  const [presetStatus, setPresetStatus] = useState(null);
+  const [loadingPreset, setLoadingPreset] = useState(false);
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [addPresetProviderId, setAddPresetProviderId] = useState('');
+  const [addPresetModelAlias, setAddPresetModelAlias] = useState('');
 
   const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
   const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
@@ -196,6 +213,119 @@ export default function DashboardClient({ routerBaseUrl }) {
     };
   }, [authenticatedJsonHeaders, usagePeriod]);
 
+  const loadPreset = useCallback(async function loadPreset() {
+    setLoadingPreset(true);
+    setPresetStatus(null);
+    try {
+      const response = await fetch('/api/presets/default', {
+        headers: await authenticatedJsonHeaders()
+      });
+      const data = await parseJsonResponse(response, 'Failed to load default preset');
+      setPreset(data);
+      setPresetDraftSteps(draftStepsFromPreset(data));
+    } catch (error) {
+      setPresetStatus({ type: 'error', message: error.message || 'Failed to load default preset' });
+    } finally {
+      setLoadingPreset(false);
+    }
+  }, [authenticatedJsonHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialPreset() {
+      try {
+        const headers = await authenticatedJsonHeaders();
+        if (cancelled) return;
+        setLoadingPreset(true);
+        setPresetStatus(null);
+
+        const response = await fetch('/api/presets/default', { headers });
+        const data = await parseJsonResponse(response, 'Failed to load default preset');
+        if (cancelled) return;
+        setPreset(data);
+        setPresetDraftSteps(draftStepsFromPreset(data));
+      } catch (error) {
+        if (!cancelled) setPresetStatus({ type: 'error', message: error.message || 'Failed to load default preset' });
+      } finally {
+        if (!cancelled) setLoadingPreset(false);
+      }
+    }
+
+    loadInitialPreset();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedJsonHeaders]);
+
+  function updateDraftModelAlias(index, value) {
+    setPresetDraftSteps((current) => current.map((step, stepIndex) => (
+      stepIndex === index ? { ...step, model_alias: value } : step
+    )));
+  }
+
+  function moveDraftStep(index, direction) {
+    setPresetDraftSteps((current) => {
+      const next = [...current];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return current;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function removeDraftStep(index) {
+    setPresetDraftSteps((current) => current.filter((_, stepIndex) => stepIndex !== index));
+  }
+
+  function resetPresetDraft() {
+    setPresetDraftSteps(draftStepsFromPreset(preset));
+    setPresetStatus(null);
+  }
+
+  function addProviderToDraft() {
+    const provider = providers.find((item) => item.id === addPresetProviderId);
+    if (!provider) return;
+    setPresetDraftSteps((current) => [
+      ...current,
+      {
+        provider_connection_id: provider.id,
+        display_name: provider.display_name,
+        status: provider.status,
+        health: provider.quota_state?.health || 'unknown',
+        model_alias: addPresetModelAlias.trim()
+      }
+    ]);
+    setAddPresetProviderId('');
+    setAddPresetModelAlias('');
+  }
+
+  async function savePresetChain() {
+    setSavingPreset(true);
+    setPresetStatus(null);
+    try {
+      const response = await fetch('/api/presets/default', {
+        method: 'PUT',
+        headers: await authenticatedJsonHeaders(),
+        body: JSON.stringify({
+          steps: presetDraftSteps.map((step) => ({
+            provider_connection_id: step.provider_connection_id,
+            model_alias: step.model_alias?.trim() || null
+          }))
+        })
+      });
+      const data = await parseJsonResponse(response, 'Failed to save default preset');
+      setPreset(data);
+      setPresetDraftSteps(draftStepsFromPreset(data));
+      setPresetStatus({ type: 'success', message: 'Default fallback chain saved.' });
+    } catch (error) {
+      setPresetStatus({ type: 'error', message: error.message || 'Failed to save default preset' });
+    } finally {
+      setSavingPreset(false);
+    }
+  }
+
   function selectUsagePeriod(period) {
     setUsagePeriod(period);
   }
@@ -303,6 +433,11 @@ export default function DashboardClient({ routerBaseUrl }) {
     }
   }
 
+  const draftProviderIds = new Set(presetDraftSteps.map((step) => step.provider_connection_id));
+  const availablePresetProviders = providers.filter((provider) => (
+    provider.status !== 'disconnected' && !draftProviderIds.has(provider.id)
+  ));
+
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <section style={cardStyle}>
@@ -406,6 +541,79 @@ export default function DashboardClient({ routerBaseUrl }) {
               ) : null}
             </div>
           ))}
+        </div>
+      </section>
+
+      <section style={cardStyle}>
+        <div>
+          <h2 style={{ margin: 0 }}>Default fallback chain</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router tries providers in this order for model <code>auto</code>.</p>
+        </div>
+
+        {presetStatus ? <StatusMessage status={presetStatus} /> : null}
+        {loadingPreset ? <p>Loading default preset…</p> : null}
+
+        <div style={{ display: 'grid', gap: 12 }}>
+          {presetDraftSteps.length === 0 && !loadingPreset ? <p style={{ color: '#4b5563' }}>No providers in the fallback chain yet.</p> : null}
+          {presetDraftSteps.map((step, index) => (
+            <div key={step.provider_connection_id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 10 }}>
+              <strong>#{index + 1} {step.display_name}</strong>
+              <span>Status: {step.status}</span>
+              <span>Health: {step.health || 'unknown'}</span>
+              {step.status === 'error' ? <span style={{ color: '#92400e' }}>Warning: this provider is currently marked error.</span> : null}
+              <label style={labelStyle}>
+                Model override optional
+                <input
+                  style={inputStyle}
+                  value={step.model_alias || ''}
+                  onChange={(event) => updateDraftModelAlias(index, event.target.value)}
+                  placeholder="provider default"
+                />
+              </label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button style={buttonStyle} type="button" onClick={() => moveDraftStep(index, -1)} disabled={index === 0}>Move up</button>
+                <button style={buttonStyle} type="button" onClick={() => moveDraftStep(index, 1)} disabled={index === presetDraftSteps.length - 1}>Move down</button>
+                <button style={buttonStyle} type="button" onClick={() => removeDraftStep(index)}>Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+          <strong>Add provider to chain</strong>
+          <label style={labelStyle}>
+            Provider
+            <select style={inputStyle} value={addPresetProviderId} onChange={(event) => setAddPresetProviderId(event.target.value)}>
+              <option value="">Select provider…</option>
+              {availablePresetProviders.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.display_name} — {provider.status} / {provider.quota_state?.health || 'unknown'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Model override optional
+            <input
+              style={inputStyle}
+              value={addPresetModelAlias}
+              onChange={(event) => setAddPresetModelAlias(event.target.value)}
+              placeholder="provider default"
+            />
+          </label>
+          <button style={buttonStyle} type="button" onClick={addProviderToDraft} disabled={!addPresetProviderId}>Add to chain</button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button style={buttonStyle} type="button" onClick={savePresetChain} disabled={savingPreset}>
+            {savingPreset ? 'Saving…' : 'Save chain'}
+          </button>
+          <button style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }} type="button" onClick={resetPresetDraft} disabled={savingPreset}>
+            Reset changes
+          </button>
+          <button style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }} type="button" onClick={loadPreset} disabled={loadingPreset || savingPreset}>
+            Refresh chain
+          </button>
         </div>
       </section>
 
