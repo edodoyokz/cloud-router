@@ -10,3 +10,11 @@ export const FallbackModes = {
   ROUND_ROBIN: 'round_robin',
   STICKY: 'sticky'
 };
+
+export const ProviderTypes = {
+  OPENAI_COMPATIBLE: 'openai_compatible'
+};
+
+export const AuthMethods = {
+  API_KEY: 'api_key'
+};
