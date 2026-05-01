@@ -26,6 +26,7 @@ curl http://localhost:8080/health
 ```
 
 Notes:
+- Supabase-backed mode is enabled when Supabase env vars are set; otherwise router tests use the in-memory repository.
 - Full DB-backed operation still requires Supabase repository wiring.
 - Router unit tests currently run with the in-memory repository.
 

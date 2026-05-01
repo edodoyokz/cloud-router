@@ -127,6 +127,16 @@ Notes:
 - Full DB-backed runtime still needs Supabase repository integration in router.
 - Current router unit tests are designed to pass with in-memory repository.
 
+## Thin Slice Supabase Persistence
+
+1. Apply `docs/schema.sql` to Supabase.
+2. Create or identify a workspace row.
+3. Set `DEV_WORKSPACE_ID=<workspace uuid>` in local env for web API routes.
+4. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` for both web API routes and router service.
+5. Create provider via `POST /api/providers`.
+6. Create API key via `POST /api/endpoint/keys`.
+7. Use returned raw key against router `/v1/chat/completions`.
+
 ---
 
 ## Troubleshooting
