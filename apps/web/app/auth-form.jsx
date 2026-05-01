@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { getSupabaseBrowserClient } from '../lib/supabase-browser.js';
 
@@ -74,7 +75,7 @@ export default function AuthForm({ mode }) {
       </label>
       <button style={buttonStyle} type="submit" disabled={pending}>{pending ? 'Working…' : isSignup ? 'Create account' : 'Log in'}</button>
       {status ? <StatusMessage status={status} /> : null}
-      {status?.type === 'success' ? <a href="/dashboard">Open dashboard</a> : null}
+      {status?.type === 'success' ? <Link href="/dashboard">Open dashboard</Link> : null}
     </form>
   );
 }
