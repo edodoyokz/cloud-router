@@ -32,6 +32,24 @@ export default function AuthForm({ mode, nextPath = '/dashboard' }) {
   const isSignup = mode === 'signup';
   const destination = safeNextPath(nextPath);
 
+  async function signInWithOAuth(provider) {
+    setPending(true);
+    setStatus(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const result = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: authCallbackUrl(destination)
+        }
+      });
+      if (result.error) throw result.error;
+    } catch (error) {
+      setStatus({ type: 'error', message: error.message || 'OAuth sign-in failed' });
+      setPending(false);
+    }
+  }
+
   async function submit(event) {
     event.preventDefault();
     setPending(true);
@@ -75,6 +93,14 @@ export default function AuthForm({ mode, nextPath = '/dashboard' }) {
         Password
         <input style={inputStyle} type="password" value={password} onChange={(event) => setPassword(event.target.value)} required minLength={8} />
       </label>
+      <div style={{ display: 'grid', gap: 8 }}>
+        <button style={{ ...buttonStyle, background: '#fff', color: '#111827', border: '1px solid #d0d7de' }} type="button" disabled={pending} onClick={() => signInWithOAuth('google')}>
+          Continue with Google
+        </button>
+        <button style={{ ...buttonStyle, background: '#fff', color: '#111827', border: '1px solid #d0d7de' }} type="button" disabled={pending} onClick={() => signInWithOAuth('github')}>
+          Continue with GitHub
+        </button>
+      </div>
       <button style={buttonStyle} type="submit" disabled={pending}>{pending ? 'Working…' : isSignup ? 'Create account' : 'Log in'}</button>
       {status ? <StatusMessage status={status} /> : null}
       {status?.type === 'success' ? <Link href={status.href || destination}>Open dashboard</Link> : null}
