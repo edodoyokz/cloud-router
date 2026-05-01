@@ -1,3 +1,5 @@
+import { createSupabaseServerClient } from './supabase-server.js';
+
 export function bearerTokenFromRequest(request) {
   const header = request?.headers?.get?.('authorization') || request?.headers?.get?.('Authorization') || '';
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -12,8 +14,23 @@ export function getSupabaseAuthConfig() {
   return { url: url.replace(/\/+$/, ''), anonKey };
 }
 
+function normalizeSupabaseUser(data) {
+  if (!data?.id || !data?.email) {
+    throw Object.assign(new Error('Supabase session is missing user identity'), {
+      status: 401,
+      code: 'invalid_session'
+    });
+  }
+  return { id: data.id, email: data.email };
+}
+
 export async function getAuthenticatedUser(request) {
   const token = bearerTokenFromRequest(request);
+  if (token) return getAuthenticatedUserFromBearer(token);
+  return getAuthenticatedUserFromCookies();
+}
+
+export async function getAuthenticatedUserFromBearer(token) {
   if (!token) return null;
 
   const { url, anonKey } = getSupabaseAuthConfig();
@@ -36,12 +53,12 @@ export async function getAuthenticatedUser(request) {
     });
   }
 
-  if (!data?.id || !data?.email) {
-    throw Object.assign(new Error('Supabase session is missing user identity'), {
-      status: 401,
-      code: 'invalid_session'
-    });
-  }
+  return normalizeSupabaseUser(data);
+}
 
-  return { id: data.id, email: data.email };
+export async function getAuthenticatedUserFromCookies() {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) return null;
+  return normalizeSupabaseUser(data.user);
 }
