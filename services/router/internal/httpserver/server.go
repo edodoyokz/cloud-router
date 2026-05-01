@@ -54,21 +54,12 @@ func NewWithOptions(opts Options) *Server {
 		client = http.DefaultClient
 	}
 
-	s := &Server{
-		router: router,
-		mux:    http.NewServeMux(),
-		repo:   repo,
-		cfg:    opts.Config,
-		client: client,
-	}
-
+	s := &Server{router: router, mux: http.NewServeMux(), repo: repo, cfg: opts.Config, client: client}
 	s.routes()
 	return s
 }
 
-func (s *Server) Handler() http.Handler {
-	return s.mux
-}
+func (s *Server) Handler() http.Handler { return s.mux }
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("/health", s.handleHealth)
@@ -85,13 +76,11 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusMethodNotAllowed, contracts.ErrorInvalidRequest, "method not allowed")
 		return
 	}
-
 	raw, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid request body")
 		return
 	}
-
 	var req contracts.ChatCompletionRequest
 	if err := json.NewDecoder(bytes.NewReader(raw)).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid json")
@@ -119,7 +108,101 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeError(w, http.StatusNotImplemented, contracts.ErrorProviderRequestFailed, "router stub not implemented yet")
+	maxAttempts := s.cfg.MaxFallbackHops + 1
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	}
+	if maxAttempts > len(steps) {
+		maxAttempts = len(steps)
+	}
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		step := steps[attempt]
+		provider, ok, err := s.repo.ProviderConnection(r.Context(), apiKey.WorkspaceID, step.ProviderConnectionID)
+		if err != nil || !ok {
+			writeError(w, http.StatusNotFound, contracts.ErrorProviderNotFound, "provider not found")
+			return
+		}
+		if provider.ProviderType != "openai_compatible" {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "unsupported provider type")
+			return
+		}
+		baseURL, _ := provider.Metadata["base_url"].(string)
+		defaultModel, _ := provider.Metadata["default_model"].(string)
+		if baseURL == "" || defaultModel == "" {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "provider metadata invalid")
+			return
+		}
+		decrypted, err := security.DecryptCredential(s.cfg.EncryptionKey, provider.CredentialEncrypted)
+		if err != nil {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider credential missing")
+			return
+		}
+		var cred map[string]any
+		if err := json.Unmarshal(decrypted, &cred); err != nil {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider credential invalid")
+			return
+		}
+		providerAPIKey, _ := cred["api_key"].(string)
+		if providerAPIKey == "" {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider api key missing")
+			return
+		}
+
+		var body map[string]any
+		if err := json.Unmarshal(raw, &body); err != nil {
+			writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid json")
+			return
+		}
+		requestedModel, _ := body["model"].(string)
+		if requestedModel == "" || requestedModel == "auto" {
+			body["model"] = defaultModel
+		}
+		resolvedModel, _ := body["model"].(string)
+		payload, err := json.Marshal(body)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid request payload")
+			return
+		}
+
+		adapter := adapters.NewOpenAICompatibleAdapter(baseURL, providerAPIKey, s.client)
+		resp, err := adapter.Send(r.Context(), engine.ProviderRequest{RequestID: "req_1", ProviderType: provider.ProviderType, Model: resolvedModel, Payload: payload})
+		if err != nil {
+			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "provider request failed")
+			return
+		}
+
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(resp.StatusCode)
+			_, _ = w.Write(resp.Body)
+			status := "success"
+			if attempt > 0 {
+				status = "fallback"
+			}
+			_ = s.repo.RecordUsage(r.Context(), store.UsageEvent{WorkspaceID: apiKey.WorkspaceID, ProviderConnectionID: provider.ID, APIKeyID: apiKey.ID, RequestID: "req_1", ModelRequested: requestedModel, ModelResolved: resolvedModel, Status: status})
+			return
+		}
+
+		if retryableStatus(resp.StatusCode) {
+			continue
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		_, _ = w.Write(resp.Body)
+		return
+	}
+
+	writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
+}
+
+func retryableStatus(status int) bool {
+	switch status {
+	case 429, 500, 502, 503, 504:
+		return true
+	default:
+		return false
+	}
 }
 
 func bearerToken(header string) string {
