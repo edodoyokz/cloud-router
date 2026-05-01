@@ -160,6 +160,8 @@ func (r *SupabaseRepository) RecordUsage(ctx context.Context, event UsageEvent) 
 		"model_resolved":          event.ModelResolved,
 		"status":                  event.Status,
 		"error_code":              event.ErrorCode,
+		"prompt_tokens":           event.PromptTokens,
+		"completion_tokens":       event.CompletionTokens,
 		"total_tokens":            event.TotalTokens,
 	}
 	_, err := r.do(ctx, http.MethodPost, "/rest/v1/usage_events", []map[string]any{payload})

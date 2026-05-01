@@ -38,6 +38,8 @@ type UsageEvent struct {
 	ModelResolved        string
 	Status               string
 	ErrorCode            string
+	PromptTokens         int
+	CompletionTokens     int
 	TotalTokens          int
 }
 
