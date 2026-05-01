@@ -73,6 +73,9 @@ func TestSupabaseRepositoryDefaultPresetSteps(t *testing.T) {
 func TestSupabaseRepositoryProviderConnection(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/rest/v1/provider_connections") && r.Method == http.MethodGet {
+			if got := r.URL.Query().Get("status"); got != "eq.active" {
+				t.Fatalf("expected active provider filter, got %q", got)
+			}
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`[
 				{

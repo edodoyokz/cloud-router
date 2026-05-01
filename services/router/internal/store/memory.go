@@ -38,6 +38,9 @@ func (m *MemoryRepository) DefaultPresetSteps(ctx context.Context, workspaceID s
 func (m *MemoryRepository) ProviderConnection(ctx context.Context, workspaceID, providerConnectionID string) (ProviderConnection, bool, error) {
 	for _, provider := range m.Providers {
 		if provider.WorkspaceID == workspaceID && provider.ID == providerConnectionID {
+			if provider.Status != "" && provider.Status != "active" {
+				return ProviderConnection{}, false, nil
+			}
 			return provider, true, nil
 		}
 	}

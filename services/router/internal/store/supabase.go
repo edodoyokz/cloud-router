@@ -134,7 +134,7 @@ func (r *SupabaseRepository) DefaultPresetSteps(ctx context.Context, workspaceID
 }
 
 func (r *SupabaseRepository) ProviderConnection(ctx context.Context, workspaceID, providerConnectionID string) (ProviderConnection, bool, error) {
-	query := "/rest/v1/provider_connections?id=eq." + url.QueryEscape(providerConnectionID) + "&workspace_id=eq." + url.QueryEscape(workspaceID) + "&select=*"
+	query := "/rest/v1/provider_connections?id=eq." + url.QueryEscape(providerConnectionID) + "&workspace_id=eq." + url.QueryEscape(workspaceID) + "&status=eq.active&select=*"
 	data, err := r.do(ctx, http.MethodGet, query, nil)
 	if err != nil {
 		return ProviderConnection{}, false, err
