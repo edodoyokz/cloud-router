@@ -96,7 +96,7 @@ supabase db reset  # apply migrations
 
 ## 6. Database Migration
 
-Schema SQL ada di `docs/schema.sql`. Untuk apply:
+Schema SQL ada di `docs/schema.sql`. Apply the latest `docs/schema.sql` so `model_pricing_rules` exists. Untuk apply:
 
 ```bash
 # via psql
@@ -146,6 +146,7 @@ Notes:
 12. Open `/dashboard` and confirm the Workspace card shows authenticated user/workspace after login, or explicit dev fallback mode when using `DEV_WORKSPACE_ID`.
 13. Send a router request to a provider that returns OpenAI-compatible `usage`; confirm `/dashboard` Usage shows prompt/completion/total token counts.
 14. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
+15. Create a Pricing rules entry for the model shown in recent usage, then refresh Usage and confirm estimated cost is no longer `not configured`.
 
 ---
 

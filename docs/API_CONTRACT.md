@@ -410,6 +410,27 @@ Revoke an API key.
 
 ---
 
+### `GET /api/pricing/rules`
+Lists active workspace pricing rules.
+
+### `POST /api/pricing/rules`
+Creates a manual pricing rule.
+
+Request:
+```json
+{
+  "provider_connection_id": null,
+  "model_pattern": "gpt-4o-mini",
+  "input_usd_per_1m_tokens": 0.15,
+  "output_usd_per_1m_tokens": 0.6
+}
+```
+
+### `DELETE /api/pricing/rules/{id}`
+Soft-disables a pricing rule.
+
+---
+
 ### `GET /api/usage`
 Returns usage summary and recent events.
 
@@ -429,7 +450,7 @@ Returns usage summary and recent events.
     "success_rate": 0.92,
     "fallback_count": 1,
     "failed_count": 1,
-    "estimated_cost_usd": 0
+    "estimated_cost_usd": 0.000135
   },
   "events": [
     {
@@ -444,13 +465,15 @@ Returns usage summary and recent events.
       "total_tokens": 450,
       "status": "success",
       "error_code": null,
+      "estimated_cost_usd": 0.000135,
+      "pricing_rule_missing": false,
       "created_at": "2026-01-01T12:30:00Z"
     }
   ]
 }
 ```
 
-`estimated_cost_usd` is currently a placeholder (`0`) until billing logic is implemented.
+`estimated_cost_usd` is computed from active manual pricing rules. If no rule matches an event, that event returns `estimated_cost_usd: 0` and `pricing_rule_missing: true`.
 
 Token fields are parsed from successful OpenAI-compatible provider responses when available. Missing provider usage is recorded as zero.
 

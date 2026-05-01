@@ -20,6 +20,7 @@
 - [ ] Error explanation panel
 - [x] Reconnect flow
 - [ ] Provider tags: primary / backup / free / cheap
+- [x] Pricing/cost estimation configuration
 
 ## Notes
 - Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
@@ -29,6 +30,7 @@
 - Default fallback chain editor is implemented in `/dashboard`.
 - Workspace/auth polish thin slice is implemented in `/dashboard` (current workspace card + sign out).
 - Token accounting thin slice is implemented for successful non-streaming chat completions.
+- Pricing/cost estimation thin slice is implemented with manual workspace pricing rules.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
