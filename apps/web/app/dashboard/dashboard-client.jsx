@@ -89,6 +89,9 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [savingPreset, setSavingPreset] = useState(false);
   const [addPresetProviderId, setAddPresetProviderId] = useState('');
   const [addPresetModelAlias, setAddPresetModelAlias] = useState('');
+  const [workspaceContext, setWorkspaceContext] = useState(null);
+  const [workspaceStatus, setWorkspaceStatus] = useState(null);
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
 
   const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
   const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
@@ -110,6 +113,22 @@ export default function DashboardClient({ routerBaseUrl }) {
     return headers;
   }, []);
 
+  const loadWorkspaceContext = useCallback(async function loadWorkspaceContext() {
+    setLoadingWorkspace(true);
+    setWorkspaceStatus(null);
+    try {
+      const response = await fetch('/api/workspaces/current', {
+        headers: await authenticatedJsonHeaders()
+      });
+      const data = await parseJsonResponse(response, 'Failed to load workspace');
+      setWorkspaceContext(data);
+    } catch (error) {
+      setWorkspaceStatus({ type: 'error', message: error.message || 'Failed to load workspace' });
+    } finally {
+      setLoadingWorkspace(false);
+    }
+  }, [authenticatedJsonHeaders]);
+
   const loadResources = useCallback(async function loadResources() {
     setLoadingResources(true);
     setManagementStatus(null);
@@ -130,6 +149,34 @@ export default function DashboardClient({ routerBaseUrl }) {
     } finally {
       setLoadingResources(false);
     }
+  }, [authenticatedJsonHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialWorkspace() {
+      try {
+        const headers = await authenticatedJsonHeaders();
+        if (cancelled) return;
+        setLoadingWorkspace(true);
+        setWorkspaceStatus(null);
+
+        const response = await fetch('/api/workspaces/current', { headers });
+        const data = await parseJsonResponse(response, 'Failed to load workspace');
+        if (cancelled) return;
+        setWorkspaceContext(data);
+      } catch (error) {
+        if (!cancelled) setWorkspaceStatus({ type: 'error', message: error.message || 'Failed to load workspace' });
+      } finally {
+        if (!cancelled) setLoadingWorkspace(false);
+      }
+    }
+
+    loadInitialWorkspace();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authenticatedJsonHeaders]);
 
   useEffect(() => {
@@ -330,6 +377,17 @@ export default function DashboardClient({ routerBaseUrl }) {
     setUsagePeriod(period);
   }
 
+  async function signOut() {
+    setWorkspaceStatus(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (error) {
+      setWorkspaceStatus({ type: 'error', message: error.message || 'Failed to sign out' });
+    }
+  }
+
   async function connectProvider(event) {
     event.preventDefault();
     setProviderPending(true);
@@ -441,11 +499,38 @@ export default function DashboardClient({ routerBaseUrl }) {
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <section style={cardStyle}>
-        <strong>Authenticated mode</strong>
-        <p style={{ margin: 0, color: '#4b5563' }}>Log in to resolve workspace from your Supabase session. Local dev can still use DEV_WORKSPACE_ID.</p>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <a href="/login">Log in</a>
-          <a href="/signup">Sign up</a>
+        <div>
+          <h2 style={{ margin: 0 }}>Workspace</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Current control-plane workspace context.</p>
+        </div>
+
+        {workspaceStatus ? <StatusMessage status={workspaceStatus} /> : null}
+        {loadingWorkspace ? <p>Loading workspace…</p> : null}
+
+        {workspaceContext ? (
+          <div style={{ display: 'grid', gap: 8 }}>
+            <span>Mode: {workspaceContext.auth_mode}</span>
+            <span>Workspace: {workspaceContext.name}</span>
+            <span>Workspace ID: <code>{workspaceContext.id}</code></span>
+            {workspaceContext.slug ? <span>Slug: {workspaceContext.slug}</span> : null}
+            <span>Role: {workspaceContext.role}</span>
+            {workspaceContext.user?.email ? <span>Signed in as: {workspaceContext.user.email}</span> : null}
+            {workspaceContext.auth_mode === 'dev_fallback' ? <p style={{ margin: 0, color: '#92400e' }}>Using DEV_WORKSPACE_ID fallback. Log in to use an authenticated workspace.</p> : null}
+          </div>
+        ) : null}
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {workspaceContext?.auth_mode === 'authenticated' ? (
+            <button style={buttonStyle} type="button" onClick={signOut}>Log out</button>
+          ) : (
+            <>
+              <a href="/login">Log in</a>
+              <a href="/signup">Sign up</a>
+            </>
+          )}
+          <button style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }} type="button" onClick={loadWorkspaceContext} disabled={loadingWorkspace}>
+            Refresh workspace
+          </button>
         </div>
       </section>
 
