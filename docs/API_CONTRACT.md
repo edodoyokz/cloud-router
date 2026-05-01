@@ -6,8 +6,9 @@ These APIs are served by the web/control plane layer (Next.js on Vercel) and tal
 
 ### Auth Header (all control-plane APIs)
 ```
-Cookie: sb-access-token=<supabase_jwt>
+Authorization: Bearer <supabase_access_token>
 ```
+Current thin slice accepts `Authorization: Bearer <supabase_access_token>` from the browser. Production cookie/SSR auth polish is deferred.
 All control-plane APIs require an authenticated Supabase session. Unauthenticated requests return `401`.
 
 ---
@@ -91,11 +92,11 @@ For the thin slice, provider creation ensures a default routing preset exists an
 ---
 
 ### `DELETE /api/providers/:id`
-Disconnects and removes a provider connection.
+Disconnects a provider connection.
 
 **Response `200`**
 ```json
-{ "deleted": true }
+{ "disconnected": true }
 ```
 
 **Errors:** `401` unauthorized, `404` not found
@@ -189,6 +190,27 @@ Returns endpoint config and snippets for the active workspace.
 ```
 
 **Errors:** `401` unauthorized, `404` no API key generated
+
+---
+
+### `GET /api/endpoint/keys`
+Returns API keys for the active workspace.
+
+**Response `200`**
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Claude Code laptop",
+    "prefix": "nnr_a1b2",
+    "created_at": "2026-01-01T00:00:00Z",
+    "last_used_at": null,
+    "revoked_at": null
+  }
+]
+```
+
+**Errors:** `401` unauthorized
 
 ---
 

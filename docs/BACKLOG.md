@@ -21,6 +21,9 @@
 - [ ] Reconnect flow
 - [ ] Provider tags: primary / backup / free / cheap
 
+## Notes
+- Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
+
 ## P2 — Nice to Have
 - [ ] Team workspace
 - [ ] Shared presets

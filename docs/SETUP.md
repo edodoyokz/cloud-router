@@ -139,6 +139,7 @@ Notes:
 5. Create provider via `POST /api/providers`.
 6. Create API key via `POST /api/endpoint/keys`.
 7. Use returned raw key against router `/v1/chat/completions`.
+8. After logging in and opening `/dashboard`, create a provider/key, confirm they appear in the lists, then test disconnect/revoke.
 
 ---
 
