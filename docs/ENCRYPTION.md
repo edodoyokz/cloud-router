@@ -1,4 +1,4 @@
-# Encryption — 9router Cloud
+# Encryption — NusaNexus Router
 
 ## Overview
 

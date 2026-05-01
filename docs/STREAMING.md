@@ -1,8 +1,8 @@
-# Streaming — 9router Cloud
+# Streaming — NusaNexus Router
 
 ## Overview
 
-9router Cloud mendukung streaming responses (SSE — Server-Sent Events) untuk OpenAI-compatible endpoint. Dokumen ini menjelaskan bagaimana streaming dihandle dari coding tool sampai provider dan kembali.
+NusaNexus Router mendukung streaming responses (SSE — Server-Sent Events) untuk OpenAI-compatible endpoint. Dokumen ini menjelaskan bagaimana streaming dihandle dari coding tool sampai provider dan kembali.
 
 ---
 

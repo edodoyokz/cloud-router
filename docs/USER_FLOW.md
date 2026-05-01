@@ -1,4 +1,4 @@
-# User Flow — 9router Cloud MVP
+# User Flow — NusaNexus Router MVP
 
 ## Flow 1: First Time User
 1. Buka landing page

@@ -1,4 +1,4 @@
--- 9router Cloud MVP - PostgreSQL schema
+-- NusaNexus Router MVP - PostgreSQL schema
 -- Base schema for MVP, designed for multi-workspace hosted AI routing
 
 create extension if not exists citext;

@@ -1,4 +1,4 @@
-# Notes — 9router Cloud
+# Notes — NusaNexus Router
 
 > Consolidated from NOTES.md and EXECUTION_NOTES.md.
 

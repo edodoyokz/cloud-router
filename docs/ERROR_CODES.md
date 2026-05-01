@@ -1,4 +1,4 @@
-# Error Codes — 9router Cloud
+# Error Codes — NusaNexus Router
 
 ## Overview
 
@@ -25,7 +25,7 @@ HTTP status code mengikuti konvensi REST.
 |------|------|---------|-------|
 | `missing_api_key` | 401 | Authorization header is required | Request tanpa header `Authorization` |
 | `invalid_api_key` | 401 | Invalid or revoked API key | API key tidak ditemukan atau sudah di-revoke |
-| `malformed_api_key` | 401 | API key format is invalid | Format key tidak sesuai (bukan `9r_*`) |
+| `malformed_api_key` | 401 | API key format is invalid | Format key tidak sesuai (bukan `nnr_*`) |
 
 ### Workspace Errors
 

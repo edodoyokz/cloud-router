@@ -1,4 +1,4 @@
-export const APP_NAME = '9router Cloud';
+export const APP_NAME = 'NusaNexus Router';
 export const DEFAULT_ROUTER_PORT = 8080;
 export const DEFAULT_WEB_PORT = 3000;
 export const DEFAULT_PRESETS = ['Hemat', 'Stabil', 'Kualitas', 'Fallback Aman'];

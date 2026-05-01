@@ -1,4 +1,4 @@
-# Wireframe — 9router Cloud MVP
+# Wireframe — NusaNexus Router MVP
 
 ## 1. Landing Page (`/`)
 

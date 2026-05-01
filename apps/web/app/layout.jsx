@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '9router Cloud',
+  title: 'NusaNexus Router',
   description: 'Hosted AI router for coding tools.'
 };
 

@@ -1,8 +1,8 @@
-# Auth Flow — 9router Cloud
+# Auth Flow — NusaNexus Router
 
 ## Overview
 
-9router Cloud punya dua jalur auth yang berbeda:
+NusaNexus Router punya dua jalur auth yang berbeda:
 
 1. **User auth** — login ke dashboard via Supabase Auth
 2. **API key auth** — tool coding hit router endpoint via API key
@@ -57,9 +57,9 @@ Coding Tool → VPS Router → Supabase (validate) → Process Request
 
 1. User generate API key di dashboard (`/dashboard/endpoint`)
 2. Dashboard generate random key, hash dengan SHA-256, simpan hash ke `api_keys` table
-3. Raw key ditampilkan sekali ke user (format: `9r_xxxxxxxxxxxx`)
+3. Raw key ditampilkan sekali ke user (format: `nnr_xxxxxxxxxxxx`)
 4. User copy key ke tool coding config
-5. Tool kirim request ke VPS dengan header `Authorization: Bearer 9r_xxxxxxxxxxxx`
+5. Tool kirim request ke VPS dengan header `Authorization: Bearer nnr_xxxxxxxxxxxx`
 6. Router terima request, hash incoming key dengan SHA-256
 7. Router lookup hash di `api_keys` table via Supabase
 8. Jika match dan `revoked_at` null → resolve `workspace_id`
@@ -69,9 +69,9 @@ Coding Tool → VPS Router → Supabase (validate) → Process Request
 ### API Key Format
 
 ```
-Prefix: 9r_
+Prefix: nnr_
 Body: 32 karakter random (base62)
-Full: 9r_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+Full: nnr_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 ```
 
 ### API Key Storage
@@ -79,7 +79,7 @@ Full: 9r_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 | Field | Value |
 |-------|-------|
 | `key_hash` | SHA-256 hash dari full key |
-| `prefix` | `9r_a1b2` (6 karakter pertama, untuk identifikasi di UI) |
+| `prefix` | `nnr_a1b2` (6 karakter pertama, untuk identifikasi di UI) |
 | `name` | Label yang user beri (e.g. "Claude Code laptop") |
 | `revoked_at` | null jika aktif, timestamp jika di-revoke |
 

@@ -1,4 +1,4 @@
-# Landing Page Copy — 9router Cloud MVP
+# Landing Page Copy — NusaNexus Router MVP
 
 ## Hero
 **Headline:** Login akun AI kamu, langsung pakai tanpa setup.

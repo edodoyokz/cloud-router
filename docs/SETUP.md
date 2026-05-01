@@ -1,4 +1,4 @@
-# Developer Setup — 9router Cloud
+# Developer Setup — NusaNexus Router
 
 ## Prerequisites
 
