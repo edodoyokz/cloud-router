@@ -112,6 +112,21 @@ psql $DATABASE_URL -f docs/schema.sql
 4. `curl localhost:8080/health` → `{"ok":true}`
 5. Web app bisa login (setelah auth wired)
 
+## 8. Current Quick Verification Commands
+
+```bash
+npm install
+npm run build:web
+cd services/router && go test ./...
+cd ../..
+npm run dev:router
+curl http://localhost:8080/health
+```
+
+Notes:
+- Full DB-backed runtime still needs Supabase repository integration in router.
+- Current router unit tests are designed to pass with in-memory repository.
+
 ---
 
 ## Troubleshooting

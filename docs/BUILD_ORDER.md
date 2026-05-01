@@ -44,3 +44,16 @@
 - User can send a request successfully
 - Router can fallback once
 - Dashboard shows provider and usage status
+
+## Current Verification Commands
+
+```bash
+npm install
+npm run build:web
+cd services/router && go test ./...
+cd ../..
+npm run dev:router
+curl http://localhost:8080/health
+```
+
+Note: DB-backed runtime requires Supabase repository wiring; current tests use in-memory repository.

@@ -14,6 +14,21 @@ Scaffold repo untuk MVP NusaNexus Router.
 - `packages/shared/` : shared types, config, constants
 - `docs/` : product/engineering notes
 
+## Quickstart
+
+```bash
+npm install
+npm run build:web
+cd services/router && go test ./...
+cd ../..
+npm run dev:router
+curl http://localhost:8080/health
+```
+
+Notes:
+- Full DB-backed operation still requires Supabase repository wiring.
+- Router unit tests currently run with the in-memory repository.
+
 ## Next Build Steps
 1. scaffold web app
 2. scaffold Go router service
