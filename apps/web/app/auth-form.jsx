@@ -23,12 +23,19 @@ const buttonStyle = {
   cursor: 'pointer'
 };
 
-export default function AuthForm({ mode }) {
+function safeNextPath(value) {
+  const next = String(value || '/dashboard');
+  if (!next.startsWith('/') || next.startsWith('//')) return '/dashboard';
+  return next;
+}
+
+export default function AuthForm({ mode, nextPath = '/dashboard' }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState(null);
   const [pending, setPending] = useState(false);
   const isSignup = mode === 'signup';
+  const destination = safeNextPath(nextPath);
 
   async function submit(event) {
     event.preventDefault();
@@ -55,7 +62,7 @@ export default function AuthForm({ mode }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error?.message || 'Failed to prepare workspace');
 
-      setStatus({ type: 'success', message: 'Workspace ready. You can open the dashboard now.' });
+      setStatus({ type: 'success', message: 'Workspace ready. You can open the dashboard now.', href: destination });
     } catch (error) {
       setStatus({ type: 'error', message: error.message || 'Authentication failed' });
     } finally {
@@ -75,7 +82,7 @@ export default function AuthForm({ mode }) {
       </label>
       <button style={buttonStyle} type="submit" disabled={pending}>{pending ? 'Working…' : isSignup ? 'Create account' : 'Log in'}</button>
       {status ? <StatusMessage status={status} /> : null}
-      {status?.type === 'success' ? <Link href="/dashboard">Open dashboard</Link> : null}
+      {status?.type === 'success' ? <Link href={status.href || destination}>Open dashboard</Link> : null}
     </form>
   );
 }

@@ -16,8 +16,8 @@ export default function DashboardPage() {
           <p style={{ margin: 0, color: '#4b5563', fontSize: 16 }}>
             Configure your OpenAI-compatible provider and generate a router API key.
           </p>
-          <div style={{ marginTop: 8, border: '1px solid #fde68a', background: '#fffbeb', color: '#92400e', borderRadius: 12, padding: 12 }}>
-            Dev mode: this dashboard uses <code>DEV_WORKSPACE_ID</code> until Supabase Auth is wired.
+          <div style={{ marginTop: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', borderRadius: 12, padding: 12 }}>
+            Authenticated sessions use Supabase cookies. Local API calls may still use <code>DEV_WORKSPACE_ID</code> fallback when no session is present.
           </div>
         </header>
         <DashboardClient routerBaseUrl={routerBaseUrl} />

@@ -5,11 +5,14 @@ export const metadata = {
   title: 'Login — NusaNexus Router'
 };
 
-export default function LoginPage() {
-  return <AuthPage title="Log in" subtitle="Access your NusaNexus Router dashboard." mode="login" alternateHref="/signup" alternateText="Need an account? Sign up" />;
+export default async function LoginPage({ searchParams }) {
+  const params = await searchParams;
+  const next = typeof params?.next === 'string' ? params.next : '/dashboard';
+
+  return <AuthPage title="Log in" subtitle="Access your NusaNexus Router dashboard." mode="login" alternateHref="/signup" alternateText="Need an account? Sign up" nextPath={next} />;
 }
 
-function AuthPage({ title, subtitle, mode, alternateHref, alternateText }) {
+function AuthPage({ title, subtitle, mode, alternateHref, alternateText, nextPath }) {
   return (
     <main style={{ minHeight: '100vh', background: '#f8fafc', color: '#111827', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: 420, margin: '0 auto', padding: '48px 24px', display: 'grid', gap: 20 }}>
@@ -19,7 +22,7 @@ function AuthPage({ title, subtitle, mode, alternateHref, alternateText }) {
           <p style={{ margin: 0, color: '#4b5563' }}>{subtitle}</p>
         </header>
         <section style={{ border: '1px solid #d0d7de', borderRadius: 16, padding: 20, background: '#fff' }}>
-          <AuthForm mode={mode} />
+          <AuthForm mode={mode} nextPath={nextPath} />
         </section>
         <Link href={alternateHref}>{alternateText}</Link>
       </div>
