@@ -3,6 +3,7 @@ export default function HomePage() {
     <main style={{ fontFamily: 'sans-serif', padding: 32 }}>
       <h1>NusaNexus Router</h1>
       <p>Hosted AI router untuk coding tools, zero-setup.</p>
+      <a href="/dashboard">Open dashboard</a>
     </main>
   );
 }
