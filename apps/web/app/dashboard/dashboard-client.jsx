@@ -194,6 +194,42 @@ export default function DashboardClient({ routerBaseUrl }) {
     }
   }
 
+  async function disconnectProvider(providerId) {
+    setPendingActionId(`provider:${providerId}`);
+    setManagementStatus(null);
+    try {
+      const response = await fetch(`/api/providers/${providerId}`, {
+        method: 'DELETE',
+        headers: await authenticatedJsonHeaders()
+      });
+      await parseJsonResponse(response, 'Failed to disconnect provider');
+      setManagementStatus({ type: 'success', message: 'Provider disconnected.' });
+      await loadResources();
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to disconnect provider' });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function revokeApiKey(keyId) {
+    setPendingActionId(`key:${keyId}`);
+    setManagementStatus(null);
+    try {
+      const response = await fetch(`/api/endpoint/keys/${keyId}`, {
+        method: 'DELETE',
+        headers: await authenticatedJsonHeaders()
+      });
+      await parseJsonResponse(response, 'Failed to revoke API key');
+      setManagementStatus({ type: 'success', message: 'API key revoked.' });
+      await loadResources();
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to revoke API key' });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <section style={cardStyle}>
@@ -202,6 +238,34 @@ export default function DashboardClient({ routerBaseUrl }) {
         <div style={{ display: 'flex', gap: 12 }}>
           <a href="/login">Log in</a>
           <a href="/signup">Sign up</a>
+        </div>
+      </section>
+
+      {managementStatus ? <StatusMessage status={managementStatus} /> : null}
+
+      <section style={cardStyle}>
+        <div>
+          <h2 style={{ margin: 0 }}>Connected providers</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Providers available to your default routing preset.</p>
+        </div>
+        {loadingResources ? <p>Loading providers…</p> : null}
+        {providers.length === 0 && !loadingResources ? <p style={{ color: '#4b5563' }}>No providers yet.</p> : null}
+        <div style={{ display: 'grid', gap: 12 }}>
+          {providers.map((provider) => (
+            <div key={provider.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 8 }}>
+              <strong>{provider.display_name}</strong>
+              <span>Status: {provider.status}</span>
+              <span>Type: {provider.provider_type}</span>
+              <span>Base URL: {provider.metadata?.base_url || '—'}</span>
+              <span>Default model: {provider.metadata?.default_model || '—'}</span>
+              <span>Created: {formatDate(provider.created_at)}</span>
+              {provider.status !== 'disconnected' ? (
+                <button style={buttonStyle} disabled={pendingActionId === `provider:${provider.id}`} onClick={() => disconnectProvider(provider.id)} type="button">
+                  {pendingActionId === `provider:${provider.id}` ? 'Disconnecting…' : 'Disconnect provider'}
+                </button>
+              ) : null}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -250,6 +314,31 @@ export default function DashboardClient({ routerBaseUrl }) {
 
       <section style={cardStyle}>
         <div>
+          <h2 style={{ margin: 0 }}>Router API keys</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Raw keys are shown only once when generated.</p>
+        </div>
+        {loadingResources ? <p>Loading API keys…</p> : null}
+        {apiKeys.length === 0 && !loadingResources ? <p style={{ color: '#4b5563' }}>No API keys yet.</p> : null}
+        <div style={{ display: 'grid', gap: 12 }}>
+          {apiKeys.map((key) => (
+            <div key={key.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 8 }}>
+              <strong>{key.name}</strong>
+              <span>Prefix: <code>{key.prefix}</code></span>
+              <span>Created: {formatDate(key.created_at)}</span>
+              <span>Last used: {formatDate(key.last_used_at)}</span>
+              <span>Status: {key.revoked_at ? `revoked at ${formatDate(key.revoked_at)}` : 'active'}</span>
+              {!key.revoked_at ? (
+                <button style={buttonStyle} disabled={pendingActionId === `key:${key.id}`} onClick={() => revokeApiKey(key.id)} type="button">
+                  {pendingActionId === `key:${key.id}` ? 'Revoking…' : 'Revoke key'}
+                </button>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={cardStyle}>
+        <div>
           <h2 style={{ margin: 0 }}>Endpoint config</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router base URL: <code>{normalizedRouterBaseUrl}</code></p>
         </div>
@@ -264,6 +353,11 @@ export default function DashboardClient({ routerBaseUrl }) {
       </section>
     </div>
   );
+}
+
+function formatDate(value) {
+  if (!value) return 'Never';
+  return new Date(value).toLocaleString();
 }
 
 async function parseJsonResponse(response, fallbackMessage) {
