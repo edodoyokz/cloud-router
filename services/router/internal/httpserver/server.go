@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"router/internal/config"
 	"router/internal/contracts"
 	"router/internal/engine"
 	"router/internal/engine/adapters"
+	"router/internal/security"
 	"router/internal/store"
 )
 
@@ -100,7 +102,32 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rawKey := bearerToken(r.Header.Get("Authorization"))
+	if rawKey == "" {
+		writeError(w, http.StatusUnauthorized, contracts.ErrorInvalidAPIKey, "invalid api key")
+		return
+	}
+	hash := security.HashAPIKey(rawKey)
+	apiKey, ok, err := s.repo.FindAPIKeyByHash(r.Context(), hash)
+	if err != nil || !ok {
+		writeError(w, http.StatusUnauthorized, contracts.ErrorInvalidAPIKey, "invalid api key")
+		return
+	}
+	steps, err := s.repo.DefaultPresetSteps(r.Context(), apiKey.WorkspaceID)
+	if err != nil || len(steps) == 0 {
+		writeError(w, http.StatusNotFound, contracts.ErrorPresetNotFound, "default preset not found")
+		return
+	}
+
 	writeError(w, http.StatusNotImplemented, contracts.ErrorProviderRequestFailed, "router stub not implemented yet")
+}
+
+func bearerToken(header string) string {
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return ""
+	}
+	return strings.TrimSpace(strings.TrimPrefix(header, prefix))
 }
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
