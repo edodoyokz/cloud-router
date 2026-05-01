@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildCurlSnippet, buildEnvSnippet, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
 import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
@@ -63,6 +63,11 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [keyStatus, setKeyStatus] = useState(null);
   const [providerPending, setProviderPending] = useState(false);
   const [keyPending, setKeyPending] = useState(false);
+  const [providers, setProviders] = useState([]);
+  const [apiKeys, setApiKeys] = useState([]);
+  const [managementStatus, setManagementStatus] = useState(null);
+  const [loadingResources, setLoadingResources] = useState(false);
+  const [pendingActionId, setPendingActionId] = useState(null);
 
   const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
   const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
@@ -71,7 +76,7 @@ export default function DashboardClient({ routerBaseUrl }) {
     setProviderForm((current) => ({ ...current, [field]: value }));
   }
 
-  async function authenticatedJsonHeaders() {
+  const authenticatedJsonHeaders = useCallback(async function authenticatedJsonHeaders() {
     const headers = { 'Content-Type': 'application/json' };
     try {
       const supabase = getSupabaseBrowserClient();
@@ -82,7 +87,66 @@ export default function DashboardClient({ routerBaseUrl }) {
       // Missing client env should not break DEV_WORKSPACE_ID fallback.
     }
     return headers;
-  }
+  }, []);
+
+  const loadResources = useCallback(async function loadResources() {
+    setLoadingResources(true);
+    setManagementStatus(null);
+    try {
+      const headers = await authenticatedJsonHeaders();
+      const [providerResponse, keyResponse] = await Promise.all([
+        fetch('/api/providers', { headers }),
+        fetch('/api/endpoint/keys', { headers })
+      ]);
+      const [providerData, keyData] = await Promise.all([
+        parseJsonResponse(providerResponse, 'Failed to load providers'),
+        parseJsonResponse(keyResponse, 'Failed to load API keys')
+      ]);
+      setProviders(providerData);
+      setApiKeys(keyData);
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to load dashboard resources' });
+    } finally {
+      setLoadingResources(false);
+    }
+  }, [authenticatedJsonHeaders]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialResources() {
+      const headers = await authenticatedJsonHeaders();
+      if (cancelled) return;
+
+      setLoadingResources(true);
+      setManagementStatus(null);
+      try {
+        const [providerResponse, keyResponse] = await Promise.all([
+          fetch('/api/providers', { headers }),
+          fetch('/api/endpoint/keys', { headers })
+        ]);
+        const [providerData, keyData] = await Promise.all([
+          parseJsonResponse(providerResponse, 'Failed to load providers'),
+          parseJsonResponse(keyResponse, 'Failed to load API keys')
+        ]);
+        if (cancelled) return;
+        setProviders(providerData);
+        setApiKeys(keyData);
+      } catch (error) {
+        if (cancelled) return;
+        setManagementStatus({ type: 'error', message: error.message || 'Failed to load dashboard resources' });
+      } finally {
+        if (cancelled) return;
+        setLoadingResources(false);
+      }
+    }
+
+    loadInitialResources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedJsonHeaders]);
 
   async function connectProvider(event) {
     event.preventDefault();
@@ -98,10 +162,10 @@ export default function DashboardClient({ routerBaseUrl }) {
           ...providerForm
         })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error?.message || 'Failed to connect provider');
+      const data = await parseJsonResponse(response, 'Failed to connect provider');
       setProviderStatus({ type: 'success', message: `Provider connected: ${data.display_name}` });
       setProviderForm((current) => ({ ...current, api_key: '' }));
+      await loadResources();
     } catch (error) {
       setProviderStatus({ type: 'error', message: error.message || 'Network error connecting provider' });
     } finally {
@@ -119,10 +183,10 @@ export default function DashboardClient({ routerBaseUrl }) {
         headers: await authenticatedJsonHeaders(),
         body: JSON.stringify({ name: keyName })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error?.message || 'Failed to generate API key');
+      const data = await parseJsonResponse(response, 'Failed to generate API key');
       setRawApiKey(data.raw_key);
       setKeyStatus({ type: 'success', message: 'Your key was generated. Copy it now. It will not be shown again.' });
+      await loadResources();
     } catch (error) {
       setKeyStatus({ type: 'error', message: error.message || 'Network error generating API key' });
     } finally {
@@ -200,6 +264,12 @@ export default function DashboardClient({ routerBaseUrl }) {
       </section>
     </div>
   );
+}
+
+async function parseJsonResponse(response, fallbackMessage) {
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.error?.message || fallbackMessage);
+  return data;
 }
 
 function StatusMessage({ status }) {
