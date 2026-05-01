@@ -1,4 +1,4 @@
-# 9router Cloud MVP
+# NusaNexus Router MVP
 
 Hosted AI router untuk coding tools, dengan tujuan utama:
 
@@ -21,7 +21,7 @@ Hosted AI router untuk coding tools, dengan tujuan utama:
 
 ## Problem yang Diselesaikan
 
-- Setup 9router/cliproxyapi terlalu teknis
+- Setup self-hosted router/cliproxyapi terlalu teknis
 - Login/provider config tersebar
 - Routing dan fallback harus diatur manual
 - User ingin satu tempat yang tinggal pakai

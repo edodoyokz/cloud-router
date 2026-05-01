@@ -1,4 +1,4 @@
-# Architecture — 9router Cloud MVP
+# Architecture — NusaNexus Router MVP
 
 > This is the consolidated architecture doc. Supersedes the earlier draft.
 

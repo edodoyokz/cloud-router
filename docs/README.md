@@ -1,6 +1,6 @@
-# Docs — 9router Cloud
+# Docs — NusaNexus Router
 
-Index of all documentation for 9router Cloud.
+Index of all documentation for NusaNexus Router.
 
 ---
 

@@ -1,6 +1,6 @@
-# 9router Cloud Impl
+# NusaNexus Router Cloud Impl
 
-Scaffold repo untuk MVP 9router Cloud.
+Scaffold repo untuk MVP NusaNexus Router.
 
 ## Stack
 - `apps/web` → Next.js UI di Vercel

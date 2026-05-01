@@ -1,4 +1,4 @@
-# API Contract — 9router Cloud MVP
+# API Contract — NusaNexus Router MVP
 
 ## 1. Public Control-Plane APIs
 
@@ -168,11 +168,11 @@ Returns endpoint config and snippets for the active workspace.
 ```json
 {
   "base_url": "https://router.yourdomain.com",
-  "api_key_prefix": "9r_a1b2",
+  "api_key_prefix": "nnr_a1b2",
   "model": "auto",
   "active_preset": "Hemat",
   "snippets": {
-    "claude_code": "OPENAI_API_BASE=https://router.yourdomain.com/v1\nOPENAI_API_KEY=9r_...",
+    "claude_code": "OPENAI_API_BASE=https://router.yourdomain.com/v1\nOPENAI_API_KEY=nnr_...",
     "cursor": "{ \"openai.apiBase\": \"https://router.yourdomain.com/v1\", ... }",
     "codex": "..."
   }
@@ -198,8 +198,8 @@ Generate a new API key.
 {
   "id": "uuid",
   "name": "Claude Code laptop",
-  "prefix": "9r_a1b2",
-  "raw_key": "9r_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "prefix": "nnr_a1b2",
+  "raw_key": "nnr_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
   "created_at": "2026-01-01T00:00:00Z"
 }
 ```
@@ -318,9 +318,9 @@ Router adds these headers to every response:
 
 | Header | Description |
 |--------|-------------|
-| `X-9r-Request-Id` | Unique request correlation ID |
-| `X-9r-Provider` | Provider type used (e.g. `codex`) |
-| `X-9r-Fallback-Hops` | Number of fallback attempts (0 if primary succeeded) |
+| `X-NNR-Request-Id` | Unique request correlation ID |
+| `X-NNR-Provider` | Provider type used (e.g. `codex`) |
+| `X-NNR-Fallback-Hops` | Number of fallback attempts (0 if primary succeeded) |
 
 ### Provider Extensibility Rule
 - provider type is resolved through a registry

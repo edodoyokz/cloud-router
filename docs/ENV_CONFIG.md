@@ -1,4 +1,4 @@
-# Environment Variables — 9router Cloud
+# Environment Variables — NusaNexus Router
 
 ## Overview
 
@@ -61,7 +61,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
 NEXT_PUBLIC_ROUTER_BASE_URL=https://router.yourdomain.com
-NEXT_PUBLIC_APP_URL=https://9router.cloud
+NEXT_PUBLIC_APP_URL=https://router.nusanexus.cloud
 NEXTAUTH_SECRET=your-random-secret-here
 
 # === Router ===
@@ -79,7 +79,7 @@ DATABASE_URL=postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres
 # === Provider OAuth (if applicable) ===
 CODEX_OAUTH_CLIENT_ID=your-client-id
 CODEX_OAUTH_CLIENT_SECRET=your-client-secret
-CODEX_OAUTH_REDIRECT_URI=https://9router.cloud/api/auth/callback/codex
+CODEX_OAUTH_REDIRECT_URI=https://router.nusanexus.cloud/api/auth/callback/codex
 ```
 
 ---

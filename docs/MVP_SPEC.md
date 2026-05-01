@@ -1,4 +1,4 @@
-# MVP Spec — 9router Cloud
+# MVP Spec — NusaNexus Router
 
 ## 1. Tujuan
 Membuat hosted AI router yang membuat user cukup login akun mereka, memilih preset routing, lalu langsung memakai satu endpoint yang siap dipakai di tool coding.
