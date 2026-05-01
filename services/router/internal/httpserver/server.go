@@ -1,7 +1,9 @@
 package httpserver
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"router/internal/config"
@@ -77,14 +79,32 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
+	if r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, contracts.ErrorInvalidRequest, "method not allowed")
+		return
+	}
 
-	result := s.router.Resolve()
-	_ = json.NewEncoder(w).Encode(contracts.ErrorResponse{
-		Error: contracts.ErrorPayload{
-			Code:    result.ErrorCode,
-			Message: "router stub not implemented yet",
-		},
-	})
+	raw, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid request body")
+		return
+	}
+
+	var req contracts.ChatCompletionRequest
+	if err := json.NewDecoder(bytes.NewReader(raw)).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid json")
+		return
+	}
+	if req.Stream {
+		writeError(w, http.StatusBadRequest, contracts.ErrorUnsupportedStreaming, "streaming is not supported yet")
+		return
+	}
+
+	writeError(w, http.StatusNotImplemented, contracts.ErrorProviderRequestFailed, "router stub not implemented yet")
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(contracts.ErrorResponse{Error: contracts.ErrorPayload{Code: code, Message: message}})
 }
