@@ -41,12 +41,13 @@ Notes:
 - Dashboard shows onboarding snippets for Claude Code, Codex, OpenClaw, Cursor, env, and cURL
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
+- Dashboard is protected by Supabase cookie middleware while API routes still support bearer tokens and dev fallback
 - Dashboard shows current workspace/auth mode and supports sign out
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add production SSR/cookie auth hardening
-2. Add usage charts and provider breakdowns
-3. Add provider tags for primary/backup/free/cheap routing hints
-4. Add better onboarding wizard with persisted checklist
+1. Add usage charts and provider breakdowns
+2. Add provider tags for primary/backup/free/cheap routing hints
+3. Add better onboarding wizard with persisted checklist
+4. Add password reset and OAuth provider login polish

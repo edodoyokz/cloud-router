@@ -14,6 +14,7 @@
 - [x] Fallback chain working end-to-end
 
 ## P1 — Should Have
+- [x] Production SSR/cookie auth hardening
 - [x] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
 - [ ] Better onboarding wizard
 - [ ] Usage charts
@@ -32,6 +33,7 @@
 - Token accounting thin slice is implemented for successful non-streaming chat completions.
 - Pricing/cost estimation thin slice is implemented with manual workspace pricing rules.
 - Onboarding snippets thin slice is implemented in `/dashboard` Endpoint config.
+- SSR/cookie auth hardening thin slice is implemented with `/dashboard` middleware and bearer-or-cookie API auth resolution.
 
 ## P2 — Nice to Have
 - [ ] Team workspace

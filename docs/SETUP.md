@@ -45,6 +45,10 @@ Buka `http://localhost:3000`.
 Open `/signup` to create an account, then `/login` and `/dashboard`.
 For local development without auth, `DEV_WORKSPACE_ID` can still be used as a fallback.
 
+Supabase Auth redirect URL should include:
+- `http://localhost:3000/auth/callback`
+- your production `/auth/callback` URL equivalent
+
 ---
 
 ## 4. Run Router Service (Go)
@@ -147,7 +151,10 @@ Notes:
 13. Send a router request to a provider that returns OpenAI-compatible `usage`; confirm `/dashboard` Usage shows prompt/completion/total token counts.
 14. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
 15. Create a Pricing rules entry for the model shown in recent usage, then refresh Usage and confirm estimated cost is no longer `not configured`.
-16. Use `/dashboard` Endpoint config snippets for Generic env, cURL, Claude Code, Codex, OpenClaw, or Cursor. Snippets include the raw key only immediately after key generation; otherwise they show `<generate-an-api-key-first>`. 
+16. Use `/dashboard` Endpoint config snippets for Generic env, cURL, Claude Code, Codex, OpenClaw, or Cursor. Snippets include the raw key only immediately after key generation; otherwise they show `<generate-an-api-key-first>`.
+17. Open `/dashboard` without a session and confirm redirect to `/login?next=/dashboard`.
+18. Log in, confirm redirect/link can open `/dashboard`, and confirm Workspace card shows `authenticated` mode.
+19. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
 
 ---
 
