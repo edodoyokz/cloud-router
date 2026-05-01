@@ -36,6 +36,7 @@ Notes:
 - Dashboard displays usage summary, token breakdown, and recent router events
 - Dashboard shows usage charts and provider/model/status breakdowns
 - Dashboard can run provider health checks and display provider health state
+- Dashboard explains common usage and provider health errors without storing prompts or provider response bodies
 - Dashboard can edit the default fallback chain used by the router
 - Dashboard can reconnect providers and rotate provider API keys
 - Dashboard can tag providers as primary, backup, free, or cheap routing hints
@@ -52,5 +53,4 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add error explanation panel
-2. Add team workspace collaboration
+1. Add team workspace collaboration

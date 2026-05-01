@@ -18,7 +18,7 @@
 - [x] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
 - [x] Better onboarding wizard
 - [x] Usage charts and provider breakdowns
-- [ ] Error explanation panel
+- [x] Error explanation panel
 - [x] Password reset and OAuth login polish
 - [x] Reconnect flow
 - [x] Provider tags: primary / backup / free / cheap
@@ -41,6 +41,7 @@
 - Persisted Quick start onboarding checklist is implemented in `/dashboard` with workspace metadata state.
 - Dashboard route protection now uses the Next.js proxy convention with Supabase cookie auth.
 - Password reset flow (`/forgot-password` → `/auth/callback?next=/reset-password` → `/reset-password`) and Google/GitHub OAuth entry points are implemented.
+- Error explanation panels are implemented in `/dashboard` for usage-event failures/fallbacks and provider health warnings/errors using sanitized metadata only.
 
 ## P2 — Nice to Have
 - [ ] Team workspace

@@ -222,6 +222,8 @@ Runs a manual health check for an OpenAI-compatible API-key provider.
 
 **Errors:** `401` unauthorized, `404` not found, `400` validation error
 
+Dashboard health explanations are derived from sanitized provider health metadata (`quota_state.health`, optional `last_error_message`) and health-check `error_code`/`message` fields. Credential material is never returned.
+
 ---
 
 ### `GET /api/presets/default`
@@ -600,6 +602,8 @@ Returns usage summary, analytics charts/breakdowns, and recent events.
 `summary`, `charts`, and `breakdowns` are computed from up to 5000 events for the selected period. `events` remains the recent list controlled by `limit` (default 50, max 100) for backward compatibility.
 
 Token fields are parsed from successful OpenAI-compatible provider responses when available. Missing provider usage is recorded as zero.
+
+Dashboard usage-event explanations are derived client-side from each event `status` and `error_code` (for example: fallback, invalid key, provider failure). No prompt contents or provider response bodies are stored or returned for these explanations.
 
 **Errors:** `401` unauthorized, `400` validation error
 
