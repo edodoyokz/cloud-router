@@ -59,6 +59,116 @@ function draftStepsFromPreset(presetData) {
   }));
 }
 
+function formatInteger(value) {
+  return new Intl.NumberFormat('en-US').format(Number(value || 0));
+}
+
+function maxMetric(rows, metric) {
+  return Math.max(1, ...(Array.isArray(rows) ? rows.map((row) => Number(row?.[metric] || 0)) : []));
+}
+
+function MetricBar({ value, max, color = '#2563eb' }) {
+  const width = Math.max(2, Math.round((Number(value || 0) / Math.max(1, Number(max || 1))) * 100));
+  return (
+    <div style={{ height: 8, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
+      <div style={{ width: `${width}%`, height: '100%', borderRadius: 999, background: color }} />
+    </div>
+  );
+}
+
+function UsageTrend({ buckets }) {
+  const rows = Array.isArray(buckets) ? buckets : [];
+  const maxRequests = maxMetric(rows, 'requests');
+
+  if (rows.length === 0) return <p style={{ margin: 0, color: '#6b7280' }}>No usage buckets available yet.</p>;
+
+  return (
+    <div style={{ display: 'grid', gap: 10 }}>
+      {rows.map((bucket) => (
+        <div key={bucket.bucket} style={{ display: 'grid', gridTemplateColumns: '72px 1fr 92px', gap: 10, alignItems: 'center', fontSize: 13 }}>
+          <span style={{ color: '#4b5563' }}>{bucket.label}</span>
+          <MetricBar value={bucket.requests} max={maxRequests} />
+          <span style={{ textAlign: 'right', fontWeight: 700 }}>{formatInteger(bucket.requests)} req</span>
+          <span />
+          <span style={{ color: '#6b7280' }}>{formatInteger(bucket.total_tokens)} tokens · {formatUsd(bucket.estimated_cost_usd)}</span>
+          <span style={{ textAlign: 'right', color: '#6b7280' }}>{formatPercent(bucket.success_rate)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProviderBreakdown({ providers }) {
+  const rows = Array.isArray(providers) ? providers : [];
+  const maxRequests = maxMetric(rows, 'requests');
+
+  if (rows.length === 0) return <p style={{ margin: 0, color: '#6b7280' }}>No provider usage yet.</p>;
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      {rows.map((provider) => (
+        <div key={provider.provider_connection_id || provider.display_name} style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+            <strong>{provider.display_name}</strong>
+            <span>{formatInteger(provider.requests)} req</span>
+          </div>
+          <MetricBar value={provider.requests} max={maxRequests} color="#16a34a" />
+          <div style={{ color: '#6b7280', fontSize: 13 }}>
+            {formatInteger(provider.total_tokens)} tokens · {formatUsd(provider.estimated_cost_usd)} · success {formatPercent(provider.success_rate)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ModelBreakdown({ models }) {
+  const rows = Array.isArray(models) ? models : [];
+  const maxTokens = maxMetric(rows, 'total_tokens');
+
+  if (rows.length === 0) return <p style={{ margin: 0, color: '#6b7280' }}>No model usage yet.</p>;
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      {rows.map((model) => (
+        <div key={model.model} style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+            <strong>{model.model}</strong>
+            <span>{formatInteger(model.total_tokens)} tokens</span>
+          </div>
+          <MetricBar value={model.total_tokens} max={maxTokens} color="#7c3aed" />
+          <div style={{ color: '#6b7280', fontSize: 13 }}>
+            {formatInteger(model.requests)} req · {formatUsd(model.estimated_cost_usd)} · success {formatPercent(model.success_rate)}
+            {model.pricing_rule_missing_count ? ` · ${formatInteger(model.pricing_rule_missing_count)} missing pricing` : ''}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusBreakdown({ statuses }) {
+  const rows = Array.isArray(statuses) ? statuses : [];
+  const maxRequests = maxMetric(rows, 'requests');
+  const colors = { success: '#16a34a', failed: '#dc2626', fallback: '#f59e0b', unknown: '#6b7280' };
+
+  if (rows.length === 0) return <p style={{ margin: 0, color: '#6b7280' }}>No status usage yet.</p>;
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      {rows.map((status) => (
+        <div key={status.status} style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+            <strong>{status.status}</strong>
+            <span>{formatInteger(status.requests)} req · {formatPercent(status.percentage)}</span>
+          </div>
+          <MetricBar value={status.requests} max={maxRequests} color={colors[status.status] || colors.unknown} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardClient({ routerBaseUrl }) {
   const normalizedRouterBaseUrl = useMemo(() => normalizeRouterBaseUrl(routerBaseUrl), [routerBaseUrl]);
   const [providerForm, setProviderForm] = useState({
@@ -754,6 +864,39 @@ export default function DashboardClient({ routerBaseUrl }) {
       </section>
 
       <section style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0 }}>Usage analytics</h2>
+            <p style={{ margin: '4px 0 0', color: '#6b7280' }}>Trends and breakdowns for the selected period.</p>
+          </div>
+          {usage?.analytics?.truncated ? (
+            <span style={{ color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '4px 8px', fontSize: 12, fontWeight: 700 }}>
+              First {formatInteger(usage.analytics.max_events)} events
+            </span>
+          ) : null}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Usage trend</h3>
+            <UsageTrend buckets={usage?.charts?.usage_buckets} />
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Status breakdown</h3>
+            <StatusBreakdown statuses={usage?.breakdowns?.statuses} />
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Provider breakdown</h3>
+            <ProviderBreakdown providers={usage?.breakdowns?.providers} />
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Model breakdown</h3>
+            <ModelBreakdown models={usage?.breakdowns?.models} />
+          </div>
+        </div>
+      </section>
+
+      <section style={cardStyle}>
         <div>
           <h2 style={{ margin: 0 }}>Pricing rules</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Estimate cost from prompt/completion tokens. Prices are USD per 1M tokens.</p>
@@ -1065,7 +1208,7 @@ function formatPercent(value) {
 }
 
 function formatNumber(value) {
-  return Number(value || 0).toLocaleString();
+  return formatInteger(value);
 }
 
 function formatDate(value) {
