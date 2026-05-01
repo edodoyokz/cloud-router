@@ -24,13 +24,13 @@ Browser → Vercel (Next.js) → Supabase Auth
 3. Next.js call Supabase Auth API
 4. Supabase return JWT access token + refresh token
 5. Token disimpan di cookie/session browser
-6. Middleware protects `/dashboard` and redirects unauthenticated users to `/login?next=/dashboard`
+6. Next.js proxy protects `/dashboard` and redirects unauthenticated users to `/login?next=/dashboard`
 7. Request API route can resolve auth from bearer token or Supabase cookie session
 8. JWT/user identity dipakai untuk resolve workspace
 
 MVP note: control-plane API routes accept Supabase bearer tokens from browser requests and can also resolve the authenticated user from Supabase SSR cookies when bearer is absent. Session identity is mapped into internal `users` rows (`auth_provider='supabase'`, `auth_provider_id=auth.users.id`, `email=auth.users.email`), then membership is ensured in `workspaces/workspace_members` (auto-create personal workspace when needed).
 
-The thin slice now uses cookie middleware for `/dashboard` and keeps `DEV_WORKSPACE_ID` as a local-only fallback for selected API resolution paths.
+The thin slice now uses the Next.js proxy convention with Supabase cookie auth for `/dashboard` and keeps `DEV_WORKSPACE_ID` as a local-only fallback for selected API resolution paths.
 
 ### Current Resolution Order (API auth helper)
 

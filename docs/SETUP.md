@@ -152,7 +152,7 @@ Notes:
 14. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
 15. Create a Pricing rules entry for the model shown in recent usage, then refresh Usage and confirm estimated cost is no longer `not configured`.
 16. Use `/dashboard` Endpoint config snippets for Generic env, cURL, Claude Code, Codex, OpenClaw, or Cursor. Snippets include the raw key only immediately after key generation; otherwise they show `<generate-an-api-key-first>`.
-17. Open `/dashboard` without a session and confirm redirect to `/login?next=/dashboard`.
+17. Open `/dashboard` without a session and confirm the Next.js proxy redirects to `/login?next=/dashboard`.
 18. Log in, confirm redirect/link can open `/dashboard`, and confirm Workspace card shows `authenticated` mode.
 19. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
 20. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.

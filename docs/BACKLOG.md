@@ -33,9 +33,10 @@
 - Token accounting thin slice is implemented for successful non-streaming chat completions.
 - Pricing/cost estimation thin slice is implemented with manual workspace pricing rules.
 - Onboarding snippets thin slice is implemented in `/dashboard` Endpoint config.
-- SSR/cookie auth hardening thin slice is implemented with `/dashboard` middleware and bearer-or-cookie API auth resolution.
+- SSR/cookie auth hardening thin slice is implemented with `/dashboard` protected by a Next.js proxy and bearer-or-cookie API auth resolution.
 - Provider tag routing hints are implemented in `/dashboard` and stored in provider metadata; router policy remains manual for MVP.
 - Persisted Quick start onboarding checklist is implemented in `/dashboard` with workspace metadata state.
+- Dashboard route protection now uses the Next.js proxy convention with Supabase cookie auth.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
