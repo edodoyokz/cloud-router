@@ -9,7 +9,7 @@ export async function POST(request) {
     const name = String(body?.name || 'Default key').trim();
     if (!name) throw new Error('name is required');
 
-    const workspaceId = resolveWorkspaceId();
+    const workspaceId = await resolveWorkspaceId(request);
     const rawKey = generateApiKey();
     const [record] = await supabaseInsert('api_keys', [{
       workspace_id: workspaceId,

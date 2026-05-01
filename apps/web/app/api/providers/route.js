@@ -9,7 +9,7 @@ export async function POST(request) {
     const body = await request.json();
     const input = normalizeProviderInput(body);
 
-    const workspaceId = resolveWorkspaceId();
+    const workspaceId = await resolveWorkspaceId(request);
     const encryptionKey = process.env.ENCRYPTION_KEY;
     if (!encryptionKey) {
       throw Object.assign(new Error('ENCRYPTION_KEY is required'), { status: 500, code: 'configuration_error' });
