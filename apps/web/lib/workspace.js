@@ -1,13 +1,29 @@
 import { randomBytes } from 'crypto';
-import { getAuthenticatedUser } from './auth.js';
+import { bearerTokenFromRequest, getAuthenticatedUser } from './auth.js';
 import { supabaseInsert, supabaseSelect } from './supabase-admin.js';
 
-export async function resolveWorkspaceId(request) {
-  const authUser = await getAuthenticatedUser(request);
-  if (authUser) {
+export async function resolveWorkspaceContext(request) {
+  const token = bearerTokenFromRequest(request);
+  if (token) {
+    const authUser = await getAuthenticatedUser(request);
     const appUser = await ensureInternalUser(authUser);
     const workspace = await ensurePersonalWorkspace(appUser, authUser.email);
-    return workspace.id;
+    const membership = await getWorkspaceMembership(appUser.id, workspace.id);
+    const details = await getWorkspaceDetails(workspace.id);
+
+    return {
+      workspace: {
+        id: details.id,
+        name: details.name,
+        slug: details.slug
+      },
+      role: membership?.role || 'owner',
+      auth_mode: 'authenticated',
+      user: {
+        id: authUser.id,
+        email: authUser.email
+      }
+    };
   }
 
   const workspaceId = process.env.DEV_WORKSPACE_ID;
@@ -17,17 +33,52 @@ export async function resolveWorkspaceId(request) {
     error.status = 401;
     throw error;
   }
-  return workspaceId;
+
+  return {
+    workspace: {
+      id: workspaceId,
+      name: 'Development Workspace',
+      slug: null
+    },
+    role: 'dev',
+    auth_mode: 'dev_fallback',
+    user: null
+  };
 }
 
-export async function requireAuthenticatedWorkspaceId(request) {
+export async function resolveWorkspaceId(request) {
+  const context = await resolveWorkspaceContext(request);
+  return context.workspace.id;
+}
+
+export async function requireAuthenticatedWorkspaceContext(request) {
   const authUser = await getAuthenticatedUser(request);
   if (!authUser) {
     throw Object.assign(new Error('authentication is required'), { status: 401, code: 'authentication_required' });
   }
   const appUser = await ensureInternalUser(authUser);
   const workspace = await ensurePersonalWorkspace(appUser, authUser.email);
-  return workspace.id;
+  const membership = await getWorkspaceMembership(appUser.id, workspace.id);
+  const details = await getWorkspaceDetails(workspace.id);
+
+  return {
+    workspace: {
+      id: details.id,
+      name: details.name,
+      slug: details.slug
+    },
+    role: membership?.role || 'owner',
+    auth_mode: 'authenticated',
+    user: {
+      id: authUser.id,
+      email: authUser.email
+    }
+  };
+}
+
+export async function requireAuthenticatedWorkspaceId(request) {
+  const context = await requireAuthenticatedWorkspaceContext(request);
+  return context.workspace.id;
 }
 
 export async function ensureInternalUser(authUser) {
@@ -63,6 +114,22 @@ export async function ensurePersonalWorkspace(appUser, email) {
   }]);
 
   return workspace;
+}
+
+export async function getWorkspaceDetails(workspaceId) {
+  const rows = await supabaseSelect('workspaces', `?id=eq.${encodeURIComponent(workspaceId)}&select=id,name,slug&limit=1`);
+  if (rows.length === 0) {
+    throw Object.assign(new Error('workspace not found'), { status: 404, code: 'workspace_not_found' });
+  }
+  return rows[0];
+}
+
+export async function getWorkspaceMembership(userId, workspaceId) {
+  const rows = await supabaseSelect(
+    'workspace_members',
+    `?user_id=eq.${encodeURIComponent(userId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=role&limit=1`
+  );
+  return rows[0] || null;
 }
 
 export function personalWorkspaceName(email) {
