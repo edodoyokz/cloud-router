@@ -14,15 +14,31 @@ All control-plane APIs require an authenticated Supabase session. Unauthenticate
 ---
 
 ### `GET /api/workspaces/current`
-Returns the active workspace for the signed-in user.
+Returns the active workspace context.
 
-**Response `200`**
+**Response `200` authenticated**
 ```json
 {
   "id": "uuid",
-  "name": "My Workspace",
-  "slug": "my-workspace",
-  "created_at": "2026-01-01T00:00:00Z"
+  "name": "alice's Workspace",
+  "slug": "alice-abc123",
+  "role": "owner",
+  "auth_mode": "authenticated",
+  "user": {
+    "email": "alice@example.com"
+  }
+}
+```
+
+**Response `200` dev fallback**
+```json
+{
+  "id": "dev-workspace-id",
+  "name": "Development Workspace",
+  "slug": null,
+  "role": "dev",
+  "auth_mode": "dev_fallback",
+  "user": null
 }
 ```
 

@@ -29,6 +29,8 @@ Browser → Vercel (Next.js) → Supabase Auth
 
 MVP note: control-plane API routes currently accept Supabase bearer tokens from browser requests, verify the session against Supabase Auth REST (`/auth/v1/user`), map `auth.users` identities into internal `users` rows (`auth_provider='supabase'`, `auth_provider_id=auth.users.id`, `email=auth.users.email`), and ensure `workspaces/workspace_members` membership by auto-creating a personal workspace when needed.
 
+The current thin slice still uses browser-forwarded bearer tokens and keeps `DEV_WORKSPACE_ID` as a local-only fallback. `GET /api/workspaces/current` exposes which mode is active (`authenticated` vs `dev_fallback`) so the dashboard can make auth/workspace state explicit.
+
 > Thin-slice local/dev bridge: if no bearer token is present, `DEV_WORKSPACE_ID` is used as a local-only fallback and must not be relied on in production.
 
 ### JWT Lifecycle

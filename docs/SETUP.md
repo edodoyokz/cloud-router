@@ -143,6 +143,7 @@ Notes:
 9. After sending a router request, open `/dashboard` and check the Usage section. Change period filters (Today, 7 days, 30 days) to confirm reload behavior.
 10. Use the provider card's `Check health` button to run a tiny chat-completion probe. Valid providers should become `active/healthy`; invalid credentials or base URLs become `error` with a sanitized message.
 11. Open `/dashboard`, use Default fallback chain to reorder providers, save, refresh, and confirm the order persists. The router uses this default chain for `model: "auto"` requests.
+12. Open `/dashboard` and confirm the Workspace card shows authenticated user/workspace after login, or explicit dev fallback mode when using `DEV_WORKSPACE_ID`.
 
 ---
 

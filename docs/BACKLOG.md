@@ -2,8 +2,8 @@
 
 ## P0 — Must Have
 - [ ] Landing page with simple value prop
-- [ ] Auth system
-- [ ] Workspace model
+- [x] Auth system
+- [x] Workspace model
 - [ ] Connect provider flow
 - [ ] Secure credential storage
 - [x] Preset routing creator
@@ -26,6 +26,7 @@
 - Basic usage dashboard thin slice is now implemented in `/dashboard` (summary metrics + recent usage events).
 - Provider health check thin slice is implemented in `/dashboard` (manual check + status display).
 - Default fallback chain editor is implemented in `/dashboard`.
+- Workspace/auth polish thin slice is implemented in `/dashboard` (current workspace card + sign out).
 
 ## P2 — Nice to Have
 - [ ] Team workspace

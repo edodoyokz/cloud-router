@@ -38,11 +38,12 @@ Notes:
 - Dashboard can edit the default fallback chain used by the router
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
+- Dashboard shows current workspace/auth mode and supports sign out
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add production cookie/SSR auth polish and workspace switching
-2. Add token/cost accounting improvements
-3. Add provider reconnect flow
-4. Add richer onboarding snippets for Claude Code / Codex / OpenClaw / Cursor
+1. Add token/cost accounting improvements
+2. Add provider reconnect flow
+3. Add richer onboarding snippets for Claude Code / Codex / OpenClaw / Cursor
+4. Add production SSR/cookie auth hardening
