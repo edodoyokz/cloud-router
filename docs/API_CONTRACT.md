@@ -258,32 +258,40 @@ Returns usage summary and recent events.
 
 **Query Parameters**
 - `period` — `today`, `7d`, `30d` (default: `today`)
-- `limit` — max events to return (default: `50`)
+- `limit` — max events to return (default: `50`, clamped to `1..100`)
 
 **Response `200`**
 ```json
 {
+  "period": "7d",
   "summary": {
-    "total_requests": 142,
-    "total_tokens": 58320,
-    "success_rate": 0.96,
-    "fallback_count": 5,
-    "estimated_cost_usd": 0.45
+    "total_requests": 12,
+    "total_tokens": 3842,
+    "success_rate": 0.92,
+    "fallback_count": 1,
+    "failed_count": 1,
+    "estimated_cost_usd": 0
   },
   "events": [
     {
       "id": "uuid",
-      "provider_type": "codex",
-      "model_resolved": "gpt-4o",
+      "provider_connection_id": "uuid",
+      "api_key_id": "uuid",
+      "request_id": "req_123",
+      "model_requested": "auto",
+      "model_resolved": "gpt-4o-mini",
       "total_tokens": 450,
       "status": "success",
+      "error_code": null,
       "created_at": "2026-01-01T12:30:00Z"
     }
   ]
 }
 ```
 
-**Errors:** `401` unauthorized
+`estimated_cost_usd` is currently a placeholder (`0`) until billing logic is implemented.
+
+**Errors:** `401` unauthorized, `400` validation error
 
 ---
 

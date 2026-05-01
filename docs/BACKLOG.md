@@ -23,6 +23,7 @@
 
 ## Notes
 - Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
+- Basic usage dashboard thin slice is now implemented in `/dashboard` (summary metrics + recent usage events).
 
 ## P2 — Nice to Have
 - [ ] Team workspace

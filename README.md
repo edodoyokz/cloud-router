@@ -33,13 +33,14 @@ Notes:
 ## Current Thin Slice
 - Minimal `/dashboard` page for provider connection and API key generation
 - Dashboard lists providers/API keys and supports disconnect/revoke actions
+- Dashboard displays usage summary and recent router events
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add usage dashboard
-2. Add provider health checks
-3. Add preset editor UI
-4. Add production cookie/SSR auth polish and workspace switching
+1. Add provider health checks
+2. Add preset editor UI
+3. Add production cookie/SSR auth polish and workspace switching
+4. Add token/cost accounting improvements
