@@ -133,6 +133,80 @@ Runs a manual health check for an OpenAI-compatible API-key provider.
 
 ---
 
+### `GET /api/presets/default`
+Returns the active workspace's default routing preset and enriched fallback chain.
+
+**Response `200`**
+```json
+{
+  "id": "uuid",
+  "name": "Default",
+  "description": "Default routing preset",
+  "is_default": true,
+  "steps": [
+    {
+      "id": "uuid",
+      "order_index": 1,
+      "provider_connection_id": "uuid",
+      "provider_type": "openai_compatible",
+      "display_name": "My Provider",
+      "status": "active",
+      "health": "healthy",
+      "model_alias": null,
+      "fallback_mode": "failover"
+    }
+  ]
+}
+```
+
+**Errors:** `401` unauthorized, `400` validation error
+
+### `PUT /api/presets/default`
+Replaces the default fallback chain.
+
+**Request Body**
+```json
+{
+  "steps": [
+    {
+      "provider_connection_id": "uuid",
+      "model_alias": "gpt-4o"
+    },
+    {
+      "provider_connection_id": "uuid",
+      "model_alias": null
+    }
+  ]
+}
+```
+
+**Response `200`**
+```json
+{
+  "id": "uuid",
+  "name": "Default",
+  "description": "Default routing preset",
+  "is_default": true,
+  "steps": [
+    {
+      "id": "uuid",
+      "order_index": 1,
+      "provider_connection_id": "uuid",
+      "provider_type": "openai_compatible",
+      "display_name": "My Provider",
+      "status": "active",
+      "health": "healthy",
+      "model_alias": "gpt-4o",
+      "fallback_mode": "failover"
+    }
+  ]
+}
+```
+
+**Errors:** `401` unauthorized, `400` validation error, `404` provider not found
+
+> MVP note: `/api/presets/default` is the implemented preset route for the current thin slice.
+
 ### `GET /api/presets`
 Returns routing presets for the active workspace.
 
