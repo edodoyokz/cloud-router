@@ -34,13 +34,14 @@ Notes:
 - Minimal `/dashboard` page for provider connection and API key generation
 - Dashboard lists providers/API keys and supports disconnect/revoke actions
 - Dashboard displays usage summary and recent router events
+- Dashboard can run provider health checks and display provider health state
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add provider health checks
-2. Add preset editor UI
-3. Add production cookie/SSR auth polish and workspace switching
-4. Add token/cost accounting improvements
+1. Add preset editor UI
+2. Add production cookie/SSR auth polish and workspace switching
+3. Add token/cost accounting improvements
+4. Add provider reconnect flow

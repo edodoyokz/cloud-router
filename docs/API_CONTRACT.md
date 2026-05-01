@@ -103,6 +103,36 @@ Disconnects a provider connection.
 
 ---
 
+### `POST /api/providers/:id/check`
+Runs a manual health check for an OpenAI-compatible API-key provider.
+
+**Response `200` healthy**
+```json
+{
+  "id": "uuid",
+  "status": "active",
+  "health": "healthy",
+  "last_checked_at": "2026-05-01T00:00:00Z",
+  "message": "Provider check passed"
+}
+```
+
+**Response `200` unhealthy**
+```json
+{
+  "id": "uuid",
+  "status": "error",
+  "health": "error",
+  "last_checked_at": "2026-05-01T00:00:00Z",
+  "error_code": "provider_check_failed",
+  "message": "Provider returned 401"
+}
+```
+
+**Errors:** `401` unauthorized, `404` not found, `400` validation error
+
+---
+
 ### `GET /api/presets`
 Returns routing presets for the active workspace.
 

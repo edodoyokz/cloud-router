@@ -141,6 +141,7 @@ Notes:
 7. Use returned raw key against router `/v1/chat/completions`.
 8. After logging in and opening `/dashboard`, create a provider/key, confirm they appear in the lists, then test disconnect/revoke.
 9. After sending a router request, open `/dashboard` and check the Usage section. Change period filters (Today, 7 days, 30 days) to confirm reload behavior.
+10. Use the provider card's `Check health` button to run a tiny chat-completion probe. Valid providers should become `active/healthy`; invalid credentials or base URLs become `error` with a sanitized message.
 
 ---
 

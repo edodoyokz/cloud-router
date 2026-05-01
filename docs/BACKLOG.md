@@ -10,7 +10,7 @@
 - [ ] OpenAI-compatible endpoint
 - [ ] API key generation
 - [ ] Basic usage dashboard
-- [ ] Provider health status
+- [x] Provider health status
 - [ ] Fallback chain working end-to-end
 
 ## P1 — Should Have
@@ -24,6 +24,7 @@
 ## Notes
 - Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
 - Basic usage dashboard thin slice is now implemented in `/dashboard` (summary metrics + recent usage events).
+- Provider health check thin slice is implemented in `/dashboard` (manual check + status display).
 
 ## P2 — Nice to Have
 - [ ] Team workspace
