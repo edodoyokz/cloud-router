@@ -386,6 +386,8 @@ Returns usage summary and recent events.
   "period": "7d",
   "summary": {
     "total_requests": 12,
+    "prompt_tokens": 2560,
+    "completion_tokens": 1282,
     "total_tokens": 3842,
     "success_rate": 0.92,
     "fallback_count": 1,
@@ -400,6 +402,8 @@ Returns usage summary and recent events.
       "request_id": "req_123",
       "model_requested": "auto",
       "model_resolved": "gpt-4o-mini",
+      "prompt_tokens": 300,
+      "completion_tokens": 150,
       "total_tokens": 450,
       "status": "success",
       "error_code": null,
@@ -410,6 +414,8 @@ Returns usage summary and recent events.
 ```
 
 `estimated_cost_usd` is currently a placeholder (`0`) until billing logic is implemented.
+
+Token fields are parsed from successful OpenAI-compatible provider responses when available. Missing provider usage is recorded as zero.
 
 **Errors:** `401` unauthorized, `400` validation error
 

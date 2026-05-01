@@ -33,7 +33,7 @@ Notes:
 ## Current Thin Slice
 - Minimal `/dashboard` page for provider connection and API key generation
 - Dashboard lists providers/API keys and supports disconnect/revoke actions
-- Dashboard displays usage summary and recent router events
+- Dashboard displays usage summary, token breakdown, and recent router events
 - Dashboard can run provider health checks and display provider health state
 - Dashboard can edit the default fallback chain used by the router
 - Supabase-backed provider/API key persistence
@@ -43,7 +43,7 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add token/cost accounting improvements
-2. Add provider reconnect flow
+1. Add provider reconnect flow
+2. Add pricing/cost estimation configuration
 3. Add richer onboarding snippets for Claude Code / Codex / OpenClaw / Cursor
 4. Add production SSR/cookie auth hardening

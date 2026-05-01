@@ -9,7 +9,7 @@
 - [x] Preset routing creator
 - [ ] OpenAI-compatible endpoint
 - [ ] API key generation
-- [ ] Basic usage dashboard
+- [x] Basic usage dashboard
 - [x] Provider health status
 - [x] Fallback chain working end-to-end
 
@@ -27,6 +27,7 @@
 - Provider health check thin slice is implemented in `/dashboard` (manual check + status display).
 - Default fallback chain editor is implemented in `/dashboard`.
 - Workspace/auth polish thin slice is implemented in `/dashboard` (current workspace card + sign out).
+- Token accounting thin slice is implemented for successful non-streaming chat completions.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
