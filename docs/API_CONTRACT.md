@@ -448,6 +448,79 @@ Revoke an API key.
 
 ---
 
+### `GET /api/onboarding`
+Returns workspace Quick start onboarding progress. Resource-backed steps are derived from providers, health state, API keys, and usage events. Explicit user-only steps are read from `workspaces.metadata.onboarding`.
+
+**Response `200`**
+```json
+{
+  "dismissed": false,
+  "steps": [
+    {
+      "id": "connect_provider",
+      "label": "Connect a provider",
+      "description": "Add an OpenAI-compatible API-key provider.",
+      "source": "derived",
+      "complete": true
+    },
+    {
+      "id": "check_provider_health",
+      "label": "Run a provider health check",
+      "description": "Verify NusaNexus Router can reach at least one provider.",
+      "source": "derived",
+      "complete": true
+    },
+    {
+      "id": "generate_router_key",
+      "label": "Generate a router API key",
+      "description": "Create a key for Claude Code, Codex, OpenClaw, Cursor, or cURL.",
+      "source": "derived",
+      "complete": true
+    },
+    {
+      "id": "copy_client_snippet",
+      "label": "Copy a client snippet",
+      "description": "Copy a ready-to-use setup snippet from Endpoint config.",
+      "source": "persisted",
+      "complete": false
+    },
+    {
+      "id": "send_first_request",
+      "label": "Send your first request",
+      "description": "Make one successful request through the hosted router.",
+      "source": "derived",
+      "complete": false
+    }
+  ],
+  "completed_count": 3,
+  "total_count": 5
+}
+```
+
+**Errors:** `401` unauthorized, `404` workspace not found
+
+---
+
+### `PATCH /api/onboarding`
+Updates explicit persisted onboarding state for the active workspace.
+
+Only `copy_client_snippet` can be set through `completed_steps`; provider, health, API-key, and first-request progress are derived server-side and cannot be marked complete by the client.
+
+**Request Body**
+```json
+{
+  "completed_steps": ["copy_client_snippet"],
+  "dismissed": false
+}
+```
+
+**Response `200`**
+Returns the same shape as `GET /api/onboarding` after merging persisted metadata and derived resource state.
+
+**Errors:** `401` unauthorized, `400` validation error, `404` workspace not found
+
+---
+
 ### `GET /api/pricing/rules`
 Lists active workspace pricing rules.
 

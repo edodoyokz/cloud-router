@@ -157,6 +157,7 @@ Notes:
 19. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
 20. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.
 21. Tag a provider as `primary` or `backup` in `/dashboard`, save tags, and confirm the fallback-chain editor shows those tag hints.
+22. Use the `/dashboard` Quick start card to confirm progress changes as provider, health, key, snippet copy, and first request milestones are completed. Dismiss and show the card again to verify workspace-persisted visibility.
 
 ---
 

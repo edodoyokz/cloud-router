@@ -16,7 +16,7 @@
 ## P1 — Should Have
 - [x] Production SSR/cookie auth hardening
 - [x] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
-- [ ] Better onboarding wizard
+- [x] Better onboarding wizard
 - [x] Usage charts and provider breakdowns
 - [ ] Error explanation panel
 - [x] Reconnect flow
@@ -35,6 +35,7 @@
 - Onboarding snippets thin slice is implemented in `/dashboard` Endpoint config.
 - SSR/cookie auth hardening thin slice is implemented with `/dashboard` middleware and bearer-or-cookie API auth resolution.
 - Provider tag routing hints are implemented in `/dashboard` and stored in provider metadata; router policy remains manual for MVP.
+- Persisted Quick start onboarding checklist is implemented in `/dashboard` with workspace metadata state.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
