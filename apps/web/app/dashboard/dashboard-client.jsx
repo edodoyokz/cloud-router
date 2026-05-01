@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { buildCurlSnippet, buildEnvSnippet, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
+import { buildOnboardingSnippets, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
 import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
 const inputStyle = {
@@ -110,8 +110,7 @@ export default function DashboardClient({ routerBaseUrl }) {
     output_usd_per_1m_tokens: ''
   });
 
-  const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
-  const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
+  const onboardingSnippets = buildOnboardingSnippets({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
 
   function updateProviderField(field, value) {
     setProviderForm((current) => ({ ...current, [field]: value }));
@@ -1041,14 +1040,20 @@ export default function DashboardClient({ routerBaseUrl }) {
         <div>
           <h2 style={{ margin: 0 }}>Endpoint config</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router base URL: <code>{normalizedRouterBaseUrl}</code></p>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>
+            {rawApiKey ? 'Snippets include the API key you just generated. Copy it before leaving this page.' : 'Generate a router API key first; snippets use a placeholder until a raw key is available.'}
+          </p>
         </div>
-        <div>
-          <h3>Environment</h3>
-          <pre style={codeStyle}>{envSnippet}</pre>
-        </div>
-        <div>
-          <h3>Test request</h3>
-          <pre style={codeStyle}>{curlSnippet}</pre>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {onboardingSnippets.map((snippet) => (
+            <div key={snippet.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 8 }}>
+              <div>
+                <h3 style={{ margin: 0 }}>{snippet.label}</h3>
+                <p style={{ margin: '6px 0 0', color: '#4b5563' }}>{snippet.description}</p>
+              </div>
+              <pre style={codeStyle}>{snippet.content}</pre>
+            </div>
+          ))}
         </div>
       </section>
     </div>
