@@ -18,11 +18,12 @@
 - [ ] Better onboarding wizard
 - [ ] Usage charts
 - [ ] Error explanation panel
-- [ ] Reconnect flow
+- [x] Reconnect flow
 - [ ] Provider tags: primary / backup / free / cheap
 
 ## Notes
 - Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
+- Provider reconnect/credential rotation thin slice is implemented in `/dashboard`.
 - Basic usage dashboard thin slice is now implemented in `/dashboard` (summary metrics + recent usage events).
 - Provider health check thin slice is implemented in `/dashboard` (manual check + status display).
 - Default fallback chain editor is implemented in `/dashboard`.

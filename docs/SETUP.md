@@ -145,6 +145,7 @@ Notes:
 11. Open `/dashboard`, use Default fallback chain to reorder providers, save, refresh, and confirm the order persists. The router uses this default chain for `model: "auto"` requests.
 12. Open `/dashboard` and confirm the Workspace card shows authenticated user/workspace after login, or explicit dev fallback mode when using `DEV_WORKSPACE_ID`.
 13. Send a router request to a provider that returns OpenAI-compatible `usage`; confirm `/dashboard` Usage shows prompt/completion/total token counts.
+14. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
 
 ---
 

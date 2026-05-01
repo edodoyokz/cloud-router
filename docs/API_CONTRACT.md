@@ -107,6 +107,43 @@ For the thin slice, provider creation ensures a default routing preset exists an
 
 ---
 
+### `PATCH /api/providers/{id}`
+Reconnects or rotates an existing OpenAI-compatible API-key provider.
+
+**Request**
+```json
+{
+  "display_name": "OpenAI production",
+  "base_url": "https://api.openai.com",
+  "default_model": "gpt-4o-mini",
+  "api_key": "sk-new"
+}
+```
+
+**Response `200`**
+```json
+{
+  "id": "uuid",
+  "provider_type": "openai_compatible",
+  "display_name": "OpenAI production",
+  "auth_method": "api_key",
+  "status": "active",
+  "metadata": {
+    "base_url": "https://api.openai.com",
+    "default_model": "gpt-4o-mini"
+  },
+  "quota_state": {},
+  "last_checked_at": null,
+  "created_at": "2026-05-01T00:00:00.000Z"
+}
+```
+
+The response never includes `credential_encrypted` or raw credential material. Health check remains manual after reconnect.
+
+**Errors:** `401` unauthorized, `404` not found, `400` validation error
+
+---
+
 ### `DELETE /api/providers/:id`
 Disconnects a provider connection.
 

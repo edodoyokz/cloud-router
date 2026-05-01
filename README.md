@@ -36,6 +36,7 @@ Notes:
 - Dashboard displays usage summary, token breakdown, and recent router events
 - Dashboard can run provider health checks and display provider health state
 - Dashboard can edit the default fallback chain used by the router
+- Dashboard can reconnect providers and rotate provider API keys
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
 - Dashboard shows current workspace/auth mode and supports sign out
@@ -43,7 +44,7 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add provider reconnect flow
-2. Add pricing/cost estimation configuration
-3. Add richer onboarding snippets for Claude Code / Codex / OpenClaw / Cursor
-4. Add production SSR/cookie auth hardening
+1. Add pricing/cost estimation configuration
+2. Add richer onboarding snippets for Claude Code / Codex / OpenClaw / Cursor
+3. Add production SSR/cookie auth hardening
+4. Add usage charts and provider breakdowns
