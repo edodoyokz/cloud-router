@@ -22,3 +22,24 @@ export function encryptCredential(keyHex, plaintext) {
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, encrypted, tag]).toString('base64');
 }
+
+export function decryptCredential(encrypted, keyHex = process.env.ENCRYPTION_KEY) {
+  if (!encrypted) throw new Error('missing encrypted credential');
+  if (!keyHex) throw new Error('ENCRYPTION_KEY is required');
+
+  const key = Buffer.from(keyHex, 'hex');
+  if (key.length !== 32) throw new Error('ENCRYPTION_KEY must be 32 bytes hex');
+
+  const payload = Buffer.from(encrypted, 'base64');
+  if (payload.length <= 28) throw new Error('invalid encrypted credential');
+
+  const iv = payload.subarray(0, 12);
+  const cipherText = payload.subarray(12, payload.length - 16);
+  const tag = payload.subarray(payload.length - 16);
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const decrypted = Buffer.concat([decipher.update(cipherText), decipher.final()]);
+
+  return decrypted.toString('utf8');
+}
