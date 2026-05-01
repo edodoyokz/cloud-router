@@ -44,6 +44,14 @@ The thin slice now uses the Next.js proxy convention with Supabase cookie auth f
 
 `/auth/callback` exchanges Supabase `code` for a session and redirects to a safe local `next` path (default `/dashboard`).
 
+Password reset uses the same callback entry point:
+- User opens `/forgot-password` and submits email.
+- Supabase sends email with redirect to `/auth/callback?next=/reset-password`.
+- Callback exchanges code for session and redirects to `/reset-password`.
+- `/reset-password` updates password and then can bootstrap workspace before opening dashboard.
+
+Login/signup also include OAuth buttons for Google and GitHub via Supabase OAuth, both redirecting through `/auth/callback`.
+
 ### JWT Lifecycle
 
 | Event | Action |

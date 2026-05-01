@@ -19,6 +19,7 @@
 - [x] Better onboarding wizard
 - [x] Usage charts and provider breakdowns
 - [ ] Error explanation panel
+- [x] Password reset and OAuth login polish
 - [x] Reconnect flow
 - [x] Provider tags: primary / backup / free / cheap
 - [x] Pricing/cost estimation configuration
@@ -37,6 +38,7 @@
 - Provider tag routing hints are implemented in `/dashboard` and stored in provider metadata; router policy remains manual for MVP.
 - Persisted Quick start onboarding checklist is implemented in `/dashboard` with workspace metadata state.
 - Dashboard route protection now uses the Next.js proxy convention with Supabase cookie auth.
+- Password reset flow (`/forgot-password` → `/auth/callback?next=/reset-password` → `/reset-password`) and Google/GitHub OAuth entry points are implemented.
 
 ## P2 — Nice to Have
 - [ ] Team workspace

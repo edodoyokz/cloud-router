@@ -49,6 +49,12 @@ Supabase Auth redirect URL should include:
 - `http://localhost:3000/auth/callback`
 - your production `/auth/callback` URL equivalent
 
+Manual auth verification (password reset + OAuth):
+- Open `/forgot-password`, submit a valid account email, and confirm success messaging.
+- Use the reset email link and ensure it lands through `/auth/callback?next=/reset-password` to `/reset-password`.
+- Set a new password in `/reset-password`, then confirm dashboard access works.
+- In `/login` or `/signup`, click Google and GitHub buttons and confirm each redirects to the provider consent screen via Supabase OAuth.
+
 ---
 
 ## 4. Run Router Service (Go)

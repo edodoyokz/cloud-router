@@ -44,13 +44,13 @@ Notes:
 - Dashboard shows a persisted Quick start onboarding checklist
 - Supabase-backed provider/API key persistence
 - Thin Supabase Auth login/signup with hybrid workspace auto-create
+- Dashboard auth supports password reset and Google/GitHub OAuth entry points
 - Dashboard is protected by a Next.js proxy with Supabase cookie auth while API routes still support bearer tokens and dev fallback
 - Dashboard shows current workspace/auth mode and supports sign out
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add password reset and OAuth provider login polish
-2. Add tag-based routing policy suggestions
-3. Add error explanation panel
-4. Add team workspace collaboration
+1. Add tag-based routing policy suggestions
+2. Add error explanation panel
+3. Add team workspace collaboration
