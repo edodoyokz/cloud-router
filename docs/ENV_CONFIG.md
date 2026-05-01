@@ -17,7 +17,6 @@ Semua environment variables dikelompokkan per service. Buat file `.env` di root 
 | `DEV_WORKSPACE_ID` | optional local fallback | — | Workspace UUID fallback when no bearer auth session is provided. Do not rely on this in production. |
 | `NEXT_PUBLIC_ROUTER_BASE_URL` | yes | `http://localhost:8080` | Base URL router data plane |
 | `NEXT_PUBLIC_APP_URL` | no | `http://localhost:3000` | Public URL web app |
-| `NEXTAUTH_SECRET` | yes | — | Secret untuk session encryption (jika pakai NextAuth) |
 
 ---
 
@@ -43,15 +42,11 @@ Semua environment variables dikelompokkan per service. Buat file `.env` di root 
 
 ---
 
-## Provider-Specific (di router runtime)
+## Provider Credentials
 
-Generic OpenAI-compatible provider API keys disimpan encrypted di database, bukan sebagai env vars. Namun beberapa provider mungkin butuh config tambahan:
+Generic OpenAI-compatible provider API keys are entered through the dashboard/control-plane API, encrypted with `ENCRYPTION_KEY`, and stored in Supabase. They are not configured as deployment environment variables and are never returned by list APIs.
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `CODEX_OAUTH_CLIENT_ID` | for Codex | — | OAuth client ID untuk Codex |
-| `CODEX_OAUTH_CLIENT_SECRET` | for Codex | — | OAuth client secret |
-| `CODEX_OAUTH_REDIRECT_URI` | for Codex | — | OAuth redirect URI |
+Google/GitHub OAuth login buttons use Supabase Auth provider configuration in the Supabase dashboard; this repo does not require provider-specific OAuth env vars for the MVP.
 
 ---
 
@@ -66,7 +61,6 @@ ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 DEV_WORKSPACE_ID=
 NEXT_PUBLIC_ROUTER_BASE_URL=https://router.yourdomain.com
 NEXT_PUBLIC_APP_URL=https://router.nusanexus.cloud
-NEXTAUTH_SECRET=your-random-secret-here
 
 # === Router ===
 ROUTER_PORT=8080
@@ -79,11 +73,6 @@ MAX_FALLBACK_HOPS=3
 
 # === Supabase Migration ===
 DATABASE_URL=postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres
-
-# === Provider OAuth (if applicable) ===
-CODEX_OAUTH_CLIENT_ID=your-client-id
-CODEX_OAUTH_CLIENT_SECRET=your-client-secret
-CODEX_OAUTH_REDIRECT_URI=https://router.nusanexus.cloud/api/auth/callback/codex
 ```
 
 ---
@@ -92,6 +81,7 @@ CODEX_OAUTH_REDIRECT_URI=https://router.nusanexus.cloud/api/auth/callback/codex
 
 - **NEVER** commit `.env` ke git — pastikan ada di `.gitignore`
 - `SUPABASE_SERVICE_ROLE_KEY` hanya boleh ada di server-side (web API routes dan router service)
-- `ENCRYPTION_KEY` hanya boleh ada di router service
+- `ENCRYPTION_KEY` hanya boleh ada di server-side runtime yang membutuhkan credential encryption/decryption (web API routes dan router service). Jangan expose ke browser atau pakai prefix `NEXT_PUBLIC_`.
+- `ENCRYPTION_KEY` harus 32 bytes hex / 64 hex chars.
 - `NEXT_PUBLIC_*` prefix berarti value akan terexpose ke browser — hanya untuk non-secret values
 - Rotate `ENCRYPTION_KEY` memerlukan re-encrypt semua credentials di database

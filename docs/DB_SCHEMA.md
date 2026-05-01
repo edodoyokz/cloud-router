@@ -56,9 +56,9 @@ Koneksi akun/provider milik user.
 |---|---|---|
 | id | uuid PK | generated server-side |
 | workspace_id | uuid FK workspaces.id | ownership boundary |
-| provider_type | text | stable provider slug, e.g. codex, kimi, minimax, zai, alibaba |
+| provider_type | text | stable provider slug; MVP uses `openai_compatible` |
 | display_name | text | nama yang ditampilkan di UI |
-| auth_method | text | oauth, api_key, token, cookie |
+| auth_method | text | credential mode; MVP uses `api_key` |
 | provider_family | text | provider family, default `openai_compatible` |
 | capabilities | jsonb | capability metadata, default `{}` |
 | metadata | jsonb | provider metadata seperti `base_url`, `default_model`, dan routing hint `tags` |

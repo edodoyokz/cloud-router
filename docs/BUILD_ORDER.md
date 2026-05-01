@@ -22,7 +22,7 @@
 6. Endpoint page
 7. Usage page
 
-Note: A minimal dashboard thin slice now exists at `/dashboard` for provider connection, API key generation, and endpoint snippets.
+Note: `/dashboard` now supports provider connection, API key generation, endpoint snippets, usage analytics, provider health, fallback-chain editing, pricing rules, onboarding checklist, provider tags, tag-based chain suggestions, reconnect/rotation, and error explanations.
 
 ## Phase 4 — Router Engine
 1. OpenAI-compatible endpoint
@@ -51,11 +51,14 @@ Note: A minimal dashboard thin slice now exists at `/dashboard` for provider con
 
 ```bash
 npm install
+npm run lint:web
 npm run build:web
+node --test apps/web/lib/error-explanations.test.js
+node --test apps/web/lib/provider-routing-suggestions.test.js
 cd services/router && go test ./...
 cd ../..
 npm run dev:router
 curl http://localhost:8080/health
 ```
 
-Note: DB-backed runtime requires Supabase repository wiring; current tests use in-memory repository.
+Note: Supabase-backed router runtime is enabled when `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` are configured. Router unit tests use the in-memory repository.

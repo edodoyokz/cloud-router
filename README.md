@@ -26,8 +26,7 @@ curl http://localhost:8080/health
 ```
 
 Notes:
-- Supabase-backed mode is enabled when Supabase env vars are set; otherwise router tests use the in-memory repository.
-- Full DB-backed operation still requires Supabase repository wiring.
+- Supabase-backed mode is enabled when `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` are set for the router service.
 - Router unit tests currently run with the in-memory repository.
 
 ## Current Thin Slice
@@ -53,5 +52,18 @@ Notes:
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
+## Release Readiness Verification
+
+```bash
+npm install
+npm run lint:web
+npm run build:web
+node --test apps/web/lib/error-explanations.test.js
+node --test apps/web/lib/provider-routing-suggestions.test.js
+cd services/router && go test ./...
+```
+
 ## Next Build Steps
 1. Add team workspace collaboration
+2. Harden deployment/release checklist
+3. Add streaming support

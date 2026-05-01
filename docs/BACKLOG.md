@@ -4,11 +4,11 @@
 - [ ] Landing page with simple value prop
 - [x] Auth system
 - [x] Workspace model
-- [ ] Connect provider flow
-- [ ] Secure credential storage
+- [x] Connect provider flow
+- [x] Secure credential storage
 - [x] Preset routing creator
-- [ ] OpenAI-compatible endpoint
-- [ ] API key generation
+- [x] OpenAI-compatible endpoint
+- [x] API key generation
 - [x] Basic usage dashboard
 - [x] Provider health status
 - [x] Fallback chain working end-to-end
@@ -26,6 +26,7 @@
 - [x] Tag-based routing policy suggestions
 
 ## Notes
+- Provider connection flow, encrypted provider credential storage, router API key generation, and non-streaming OpenAI-compatible endpoint are implemented for the MVP.
 - Provider/API key management thin slice is now implemented in `/dashboard` (list + disconnect/revoke).
 - Provider reconnect/credential rotation thin slice is implemented in `/dashboard`.
 - Basic usage dashboard thin slice is now implemented in `/dashboard` (summary metrics + recent usage events).

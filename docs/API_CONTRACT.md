@@ -4,12 +4,14 @@
 
 These APIs are served by the web/control plane layer (Next.js on Vercel) and talk to Supabase.
 
-### Auth Header (all control-plane APIs)
-```
-Authorization: Bearer <supabase_access_token>
-```
-Current thin slice accepts `Authorization: Bearer <supabase_access_token>` from the browser. Production cookie/SSR auth polish is deferred.
-All control-plane APIs require an authenticated Supabase session. Unauthenticated requests return `401`.
+### Auth Header / Session (all control-plane APIs)
+Control-plane APIs resolve auth in this order:
+
+1. `Authorization: Bearer <supabase_access_token>`
+2. Supabase SSR cookie session
+3. `DEV_WORKSPACE_ID` fallback only for local/dev workspace resolution paths that explicitly allow it
+
+Authenticated production requests require either a valid bearer token or Supabase cookie session. Unauthenticated requests return `401`.
 
 ---
 
@@ -54,11 +56,16 @@ Returns provider connections for the active workspace.
 [
   {
     "id": "uuid",
-    "provider_type": "codex",
-    "display_name": "Codex OAuth",
-    "auth_method": "oauth",
+    "provider_type": "openai_compatible",
+    "display_name": "OpenAI-compatible provider",
+    "auth_method": "api_key",
     "status": "active",
-    "quota_state": { "remaining_pct": 85 },
+    "metadata": {
+      "base_url": "https://api.example.com",
+      "default_model": "gpt-4o-mini",
+      "tags": ["primary", "cheap"]
+    },
+    "quota_state": { "health": "healthy" },
     "last_checked_at": "2026-01-01T12:00:00Z"
   }
 ]
@@ -639,13 +646,15 @@ Example:
 ```
 
 ### Expected Router Behavior
-1. Validate API key
+1. Validate router API key
 2. Resolve workspace
-3. Load active preset
-4. Pick provider step
-5. Forward request
-6. Return translated response
-7. Log usage
+3. Load active default preset
+4. Pick provider step from the saved fallback chain
+5. Reject `stream: true` with `unsupported_streaming`
+6. Forward non-streaming request to the OpenAI-compatible provider
+7. Return provider response with router headers
+8. Log success usage with token counts when available
+9. Log authenticated router failures as zero-token failed usage events
 
 ### Successful Response (non-streaming)
 ```json
@@ -674,7 +683,7 @@ Router adds these headers to every response:
 | Header | Description |
 |--------|-------------|
 | `X-NNR-Request-Id` | Unique request correlation ID |
-| `X-NNR-Provider` | Provider type used (e.g. `codex`) |
+| `X-NNR-Provider` | Provider type used (e.g. `openai_compatible`) |
 | `X-NNR-Fallback-Hops` | Number of fallback attempts (0 if primary succeeded) |
 
 ### Provider Extensibility Rule

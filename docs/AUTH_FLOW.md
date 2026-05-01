@@ -148,32 +148,27 @@ Router reads config ← Supabase
 
 ---
 
-## 4. Provider OAuth Flow (Codex Example)
+## 4. Provider Credential Flow
+
+MVP provider support is generic OpenAI-compatible API-key configuration. Provider OAuth is not part of the current runtime path.
 
 ### Flow
 
 ```text
-Browser → Vercel → Provider OAuth → Vercel callback → encrypt → Supabase
+Browser dashboard → Next.js API route → encrypt credential → Supabase
+Router → Supabase → decrypt credential → provider chat-completions endpoint
 ```
 
 ### Steps
 
-1. User klik "Connect Codex" di dashboard
-2. Dashboard redirect ke Codex OAuth authorize URL
-3. User login di Codex dan approve access
-4. Codex redirect back ke callback URL dengan auth code
-5. Dashboard exchange auth code → access token + refresh token
-6. Dashboard encrypt tokens (lihat `ENCRYPTION.md`)
-7. Dashboard simpan encrypted tokens ke `provider_connections.credential_encrypted`
-8. Status set ke `active`
-
-### Token Refresh
-
-- Saat router detect access token expired (provider return 401)
-- Router decrypt credential, check refresh token
-- Router call provider token refresh endpoint
-- Router re-encrypt new tokens dan update database
-- Retry original request
+1. User opens `/dashboard` and submits provider display name, base URL, default model, and API key.
+2. The control-plane API validates the OpenAI-compatible provider input.
+3. The API encrypts the provider API key with server-side `ENCRYPTION_KEY`.
+4. The encrypted credential is stored in `provider_connections.credential_encrypted`.
+5. List/detail APIs never return raw provider credentials or encrypted credential material.
+6. The router loads active provider config from Supabase for the workspace/preset.
+7. The router decrypts the credential server-side and forwards non-streaming chat-completion requests.
+8. Reconnect/rotation updates the existing provider credential in place and requires a new API key.
 
 ---
 

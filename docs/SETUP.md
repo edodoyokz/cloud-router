@@ -129,7 +129,10 @@ psql $DATABASE_URL -f docs/schema.sql
 
 ```bash
 npm install
+npm run lint:web
 npm run build:web
+node --test apps/web/lib/error-explanations.test.js
+node --test apps/web/lib/provider-routing-suggestions.test.js
 cd services/router && go test ./...
 cd ../..
 npm run dev:router
@@ -137,36 +140,37 @@ curl http://localhost:8080/health
 ```
 
 Notes:
-- Full DB-backed runtime still needs Supabase repository integration in router.
-- Current router unit tests are designed to pass with in-memory repository.
+- Supabase-backed router runtime is enabled when `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` are set for the router service.
+- Current router unit tests are designed to pass with the in-memory repository.
 
 ## Thin Slice Supabase Persistence
 
 1. Apply `docs/schema.sql` to Supabase.
-2. Create or identify a workspace row.
-3. Set `DEV_WORKSPACE_ID=<workspace uuid>` in local env for web API routes.
-4. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` for both web API routes and router service.
-5. Create provider via `POST /api/providers`.
-6. Create API key via `POST /api/endpoint/keys`.
-7. Use returned raw key against router `/v1/chat/completions`.
-8. After logging in and opening `/dashboard`, create a provider/key, confirm they appear in the lists, then test disconnect/revoke.
-9. After sending a router request, open `/dashboard` and check the Usage section. Change period filters (Today, 7 days, 30 days) to confirm reload behavior.
-10. Use the provider card's `Check health` button to run a tiny chat-completion probe. Valid providers should become `active/healthy`; invalid credentials or base URLs become `error` with a sanitized message.
-11. Open `/dashboard`, use Default fallback chain to reorder providers, save, refresh, and confirm the order persists. The router uses this default chain for `model: "auto"` requests.
-12. Open `/dashboard` and confirm the Workspace card shows authenticated user/workspace after login, or explicit dev fallback mode when using `DEV_WORKSPACE_ID`.
-13. Send a router request to a provider that returns OpenAI-compatible `usage`; confirm `/dashboard` Usage shows prompt/completion/total token counts.
-14. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
-15. Create a Pricing rules entry for the model shown in recent usage, then refresh Usage and confirm estimated cost is no longer `not configured`.
-16. Use `/dashboard` Endpoint config snippets for Generic env, cURL, Claude Code, Codex, OpenClaw, or Cursor. Snippets include the raw key only immediately after key generation; otherwise they show `<generate-an-api-key-first>`.
-17. Open `/dashboard` without a session and confirm the Next.js proxy redirects to `/login?next=/dashboard`.
-18. Log in, confirm redirect/link can open `/dashboard`, and confirm Workspace card shows `authenticated` mode.
-19. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
-20. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.
-21. Tag a provider as `primary` or `backup` in `/dashboard`, save tags, and confirm the fallback-chain editor shows those tag hints.
-22. Use the `/dashboard` Quick start card to confirm progress changes as provider, health, key, snippet copy, and first request milestones are completed. Dismiss and show the card again to verify workspace-persisted visibility.
-23. Use provider tags in `/dashboard`, apply the tag-based fallback-chain suggestion to the draft, then click `Save chain` to persist the order.
-24. Trigger or inspect a failed/fallback usage event and a provider health warning/error, then confirm the dashboard shows plain-language explanations and suggested next actions.
-25. Trigger a router failure (e.g. missing preset or fallback exhaustion) with a valid router API key and confirm `/api/usage` shows a `failed` event with a structured `error_code` (e.g. `preset_not_found`, `fallback_exhausted`) and all token counts set to `0`.
+2. Create or identify a workspace row, or sign up through the web app and let the workspace bootstrap flow create a personal workspace.
+3. For local unauthenticated API smoke tests only, set `DEV_WORKSPACE_ID=<workspace uuid>` in local env for web API routes.
+4. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` for web API routes.
+5. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENCRYPTION_KEY` for the router service.
+6. Create provider via `POST /api/providers` or the `/dashboard` provider form.
+7. Create API key via `POST /api/endpoint/keys` or the `/dashboard` endpoint key form.
+8. Use returned raw key against router `/v1/chat/completions`.
+9. After logging in and opening `/dashboard`, create a provider/key, confirm they appear in the lists, then test disconnect/revoke.
+10. After sending a router request, open `/dashboard` and check the Usage section. Change period filters (Today, 7 days, 30 days) to confirm reload behavior.
+11. Use the provider card's `Check health` button to run a tiny chat-completion probe. Valid providers should become `active/healthy`; invalid credentials or base URLs become `error` with a sanitized message.
+12. Open `/dashboard`, use Default fallback chain to reorder providers, save, refresh, and confirm the order persists. The router uses this default chain for `model: "auto"` requests.
+13. Open `/dashboard` and confirm the Workspace card shows authenticated user/workspace after login, or explicit dev fallback mode when using `DEV_WORKSPACE_ID`.
+14. Send a router request to a provider that returns OpenAI-compatible `usage`; confirm `/dashboard` Usage shows prompt/completion/total token counts.
+15. Use a provider card's `Reconnect / rotate key` form to submit a new provider API key/base URL/default model, then run `Check health` manually to verify the provider.
+16. Create a Pricing rules entry for the model shown in recent usage, then refresh Usage and confirm estimated cost is no longer `not configured`.
+17. Use `/dashboard` Endpoint config snippets for Generic env, cURL, Claude Code, Codex, OpenClaw, or Cursor. Snippets include the raw key only immediately after key generation; otherwise they show `<generate-an-api-key-first>`.
+18. Open `/dashboard` without a session and confirm the Next.js proxy redirects to `/login?next=/dashboard`.
+19. Log in, confirm redirect/link can open `/dashboard`, and confirm Workspace card shows `authenticated` mode.
+20. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
+21. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.
+22. Tag a provider as `primary` or `backup` in `/dashboard`, save tags, and confirm the fallback-chain editor shows those tag hints.
+23. Use the `/dashboard` Quick start card to confirm progress changes as provider, health, key, snippet copy, and first request milestones are completed. Dismiss and show the card again to verify workspace-persisted visibility.
+24. Use provider tags in `/dashboard`, apply the tag-based fallback-chain suggestion to the draft, then click `Save chain` to persist the order.
+25. Trigger or inspect a failed/fallback usage event and a provider health warning/error, then confirm the dashboard shows plain-language explanations and suggested next actions.
+26. Trigger a router failure (e.g. missing preset or fallback exhaustion) with a valid router API key and confirm `/api/usage` shows a `failed` event with a structured `error_code` (e.g. `preset_not_found`, `fallback_exhausted`) and all token counts set to `0`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Provider credentials (OAuth tokens, API keys, cookies) disimpan encrypted di database. Dokumen ini menjelaskan algoritma, key management, dan encrypt/decrypt flow.
+Provider API keys are stored encrypted in the database. Dokumen ini menjelaskan algoritma, key management, dan encrypt/decrypt flow untuk MVP generic OpenAI-compatible API-key provider.
 
 ---
 
@@ -57,7 +57,7 @@ go run -e 'package main; import ("crypto/rand","fmt"); b:=make([]byte,32); rand.
 ### Saat User Connect Provider
 
 ```text
-1. User authorize provider (OAuth callback / paste API key)
+1. User submits a provider API key in the dashboard reconnect/connect form
 2. Web app server-side terima raw credential
 3. Web app encrypt credential:
    a. Parse ENCRYPTION_KEY dari env (hex → bytes)
@@ -141,18 +141,7 @@ func Decrypt(encoded string, keyHex string) ([]byte, error) {
 
 Credential yang di-encrypt adalah JSON object:
 
-### OAuth Provider (e.g. Codex)
-
-```json
-{
-  "access_token": "eyJhbGci...",
-  "refresh_token": "dGhpcyBpcyBh...",
-  "token_type": "Bearer",
-  "expires_at": "2026-06-01T00:00:00Z"
-}
-```
-
-### API Key Provider (e.g. Kimi, MiniMax)
+### OpenAI-compatible API-key Provider
 
 ```json
 {
@@ -160,16 +149,7 @@ Credential yang di-encrypt adalah JSON object:
 }
 ```
 
-### Hybrid / Cookie Provider
-
-```json
-{
-  "cookie": "session=abc123; token=xyz789",
-  "extra_headers": {
-    "X-Custom-Auth": "value"
-  }
-}
-```
+Other credential formats, such as provider OAuth tokens or cookie-based credentials, are future extensions and are not part of the MVP runtime path.
 
 ---
 
