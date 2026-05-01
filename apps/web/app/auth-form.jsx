@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { authCallbackUrl, safeNextPath } from '../lib/auth-redirects.js';
 import { getSupabaseBrowserClient } from '../lib/supabase-browser.js';
 
 const inputStyle = {
@@ -22,12 +23,6 @@ const buttonStyle = {
   fontWeight: 700,
   cursor: 'pointer'
 };
-
-function safeNextPath(value) {
-  const next = String(value || '/dashboard');
-  if (!next.startsWith('/') || next.startsWith('//')) return '/dashboard';
-  return next;
-}
 
 export default function AuthForm({ mode, nextPath = '/dashboard' }) {
   const [email, setEmail] = useState('');
