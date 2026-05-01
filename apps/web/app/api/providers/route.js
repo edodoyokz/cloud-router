@@ -3,6 +3,7 @@ import { normalizeProviderInput } from '../../../lib/provider-validation.js';
 import { encryptCredential } from '../../../lib/crypto.js';
 import { supabaseInsert, supabaseSelect } from '../../../lib/supabase-admin.js';
 import { resolveWorkspaceId } from '../../../lib/workspace.js';
+import { normalizeProviderTags } from '../../../lib/provider-tags.js';
 
 export async function GET(request) {
   try {
@@ -23,6 +24,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const input = normalizeProviderInput(body);
+    const tags = normalizeProviderTags(body.tags);
 
     const workspaceId = await resolveWorkspaceId(request);
     const encryptionKey = process.env.ENCRYPTION_KEY;
@@ -38,7 +40,7 @@ export async function POST(request) {
       auth_method: input.auth_method,
       provider_family: 'openai_compatible',
       capabilities: { chat_completions: true, model_selection: true, fallback: true },
-      metadata: { base_url: input.base_url, default_model: input.default_model },
+      metadata: { base_url: input.base_url, default_model: input.default_model, tags },
       credential_encrypted,
       status: 'active',
       quota_state: {}

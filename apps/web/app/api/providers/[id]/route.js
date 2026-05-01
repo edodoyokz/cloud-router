@@ -3,6 +3,7 @@ import { encryptCredential } from '../../../../lib/crypto.js';
 import { normalizeProviderInput } from '../../../../lib/provider-validation.js';
 import { supabasePatch, supabaseSelect } from '../../../../lib/supabase-admin.js';
 import { resolveWorkspaceId } from '../../../../lib/workspace.js';
+import { normalizeProviderTags } from '../../../../lib/provider-tags.js';
 
 export async function PATCH(request, { params }) {
   try {
@@ -12,7 +13,7 @@ export async function PATCH(request, { params }) {
 
     const existing = await supabaseSelect(
       'provider_connections',
-      `?id=eq.${encodeURIComponent(id)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,provider_type,auth_method,created_at&limit=1`
+      `?id=eq.${encodeURIComponent(id)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,provider_type,auth_method,metadata,created_at&limit=1`
     );
     if (existing.length === 0) {
       throw Object.assign(new Error('provider not found'), { status: 404, code: 'not_found' });
@@ -28,6 +29,9 @@ export async function PATCH(request, { params }) {
       auth_method: provider.auth_method,
       ...body
     });
+    const tags = Object.prototype.hasOwnProperty.call(body, 'tags')
+      ? normalizeProviderTags(body.tags)
+      : normalizeProviderTags(provider.metadata?.tags);
 
     const encryptionKey = process.env.ENCRYPTION_KEY;
     if (!encryptionKey) {
@@ -40,7 +44,7 @@ export async function PATCH(request, { params }) {
       `?id=eq.${encodeURIComponent(id)}&workspace_id=eq.${encodeURIComponent(workspaceId)}`,
       {
         display_name: input.display_name,
-        metadata: { base_url: input.base_url, default_model: input.default_model },
+        metadata: { ...(provider.metadata || {}), base_url: input.base_url, default_model: input.default_model, tags },
         credential_encrypted,
         status: 'active',
         quota_state: {},
