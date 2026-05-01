@@ -28,3 +28,22 @@ func TestMemoryRepositoryRecordsUsage(t *testing.T) {
 		t.Fatalf("expected one usage event")
 	}
 }
+
+func TestMemoryRepositoryDefaultPresetStepsSortedByOrderIndex(t *testing.T) {
+	repo := NewMemoryRepository()
+	repo.Steps = []PresetStep{
+		{ProviderConnectionID: "p2", OrderIndex: 2},
+		{ProviderConnectionID: "p1", OrderIndex: 1},
+	}
+
+	steps, err := repo.DefaultPresetSteps(context.Background(), "ws_1")
+	if err != nil {
+		t.Fatalf("default steps: %v", err)
+	}
+	if len(steps) != 2 {
+		t.Fatalf("expected 2 steps, got %d", len(steps))
+	}
+	if steps[0].ProviderConnectionID != "p1" || steps[1].ProviderConnectionID != "p2" {
+		t.Fatalf("expected steps sorted by order index, got %+v", steps)
+	}
+}

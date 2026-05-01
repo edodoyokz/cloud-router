@@ -1,6 +1,9 @@
 package store
 
-import "context"
+import (
+	"context"
+	"sort"
+)
 
 type MemoryRepository struct {
 	APIKeys     []APIKeyRecord
@@ -22,11 +25,13 @@ func (m *MemoryRepository) FindAPIKeyByHash(ctx context.Context, hash string) (A
 	return APIKeyRecord{}, false, nil
 }
 
+// DefaultPresetSteps returns steps sorted by OrderIndex.
+// MemoryRepository is a single-workspace in-memory test repository.
 func (m *MemoryRepository) DefaultPresetSteps(ctx context.Context, workspaceID string) ([]PresetStep, error) {
-	var result []PresetStep
-	for _, step := range m.Steps {
-		result = append(result, step)
-	}
+	result := append([]PresetStep(nil), m.Steps...)
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].OrderIndex < result[j].OrderIndex
+	})
 	return result, nil
 }
 

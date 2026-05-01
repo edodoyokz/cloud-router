@@ -159,9 +159,10 @@ func TestChatCompletionsFallbackToSecondProvider(t *testing.T) {
 
 	repo := store.NewMemoryRepository()
 	repo.APIKeys = []store.APIKeyRecord{{ID: "k1", WorkspaceID: "ws_1", KeyHash: "ec29b6f64e70ff4307ff0e5228e44f43258d3d8dd41a5f6c47519b4ac4f930e7"}}
+	// Intentionally unordered: repo must apply OrderIndex sorting.
 	repo.Steps = []store.PresetStep{
-		{ProviderConnectionID: "p1", ProviderType: "openai_compatible", OrderIndex: 1},
 		{ProviderConnectionID: "p2", ProviderType: "openai_compatible", OrderIndex: 2},
+		{ProviderConnectionID: "p1", ProviderType: "openai_compatible", OrderIndex: 1},
 	}
 	repo.Providers = []store.ProviderConnection{
 		{ID: "p1", WorkspaceID: "ws_1", ProviderType: "openai_compatible", CredentialEncrypted: credA, Metadata: map[string]any{"base_url": providerA.URL, "default_model": "gpt-a"}},
@@ -177,6 +178,44 @@ func TestChatCompletionsFallbackToSecondProvider(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer nnr_test_123")
 	w := httptest.NewRecorder()
 
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("expected 200, got %d body=%s", w.Code, w.Body.String())
+	}
+	if len(repo.UsageEvents) != 1 || repo.UsageEvents[0].Status != "fallback" {
+		t.Fatalf("expected one fallback usage event")
+	}
+	if repo.UsageEvents[0].ProviderConnectionID != "p2" {
+		t.Fatalf("expected fallback to p2 after sorted first step p1, got %s", repo.UsageEvents[0].ProviderConnectionID)
+	}
+}
+
+func TestChatCompletionsFallsBackOnTransportError(t *testing.T) {
+	providerB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"chatcmpl_b","choices":[]}`))
+	}))
+	defer providerB.Close()
+
+	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	credA, _ := security.EncryptCredential(keyHex, []byte(`{"api_key":"sk-a"}`))
+	credB, _ := security.EncryptCredential(keyHex, []byte(`{"api_key":"sk-b"}`))
+	repo := store.NewMemoryRepository()
+	repo.APIKeys = []store.APIKeyRecord{{ID: "k1", WorkspaceID: "ws_1", KeyHash: "ec29b6f64e70ff4307ff0e5228e44f43258d3d8dd41a5f6c47519b4ac4f930e7"}}
+	repo.Steps = []store.PresetStep{{ProviderConnectionID: "p1", ProviderType: "openai_compatible", OrderIndex: 1}, {ProviderConnectionID: "p2", ProviderType: "openai_compatible", OrderIndex: 2}}
+	repo.Providers = []store.ProviderConnection{
+		{ID: "p1", WorkspaceID: "ws_1", ProviderType: "openai_compatible", CredentialEncrypted: credA, Metadata: map[string]any{"base_url": "http://127.0.0.1:1", "default_model": "gpt-a"}},
+		{ID: "p2", WorkspaceID: "ws_1", ProviderType: "openai_compatible", CredentialEncrypted: credB, Metadata: map[string]any{"base_url": providerB.URL, "default_model": "gpt-b"}},
+	}
+	cfg := config.Load()
+	cfg.EncryptionKey = keyHex
+	cfg.MaxFallbackHops = 3
+	s := NewWithOptions(Options{Repo: repo, Config: cfg, Client: http.DefaultClient})
+
+	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"auto","messages":[{"role":"user","content":"hi"}]}`))
+	req.Header.Set("Authorization", "Bearer nnr_test_123")
+	w := httptest.NewRecorder()
 	s.Handler().ServeHTTP(w, req)
 
 	if w.Code != 200 {

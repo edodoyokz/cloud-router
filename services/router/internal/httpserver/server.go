@@ -168,7 +168,10 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		adapter := adapters.NewOpenAICompatibleAdapter(baseURL, providerAPIKey, s.client)
 		resp, err := adapter.Send(r.Context(), engine.ProviderRequest{RequestID: "req_1", ProviderType: provider.ProviderType, Model: resolvedModel, Payload: payload})
 		if err != nil {
-			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "provider request failed")
+			if attempt < maxAttempts-1 {
+				continue
+			}
+			writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
 			return
 		}
 
