@@ -21,6 +21,7 @@ create table if not exists workspaces (
   owner_user_id uuid not null references users(id) on delete cascade,
   name text not null,
   slug text not null unique,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -193,6 +194,8 @@ drop trigger if exists trg_workspaces_updated_at on workspaces;
 create trigger trg_workspaces_updated_at
 before update on workspaces
 for each row execute function set_updated_at();
+
+alter table workspaces add column if not exists metadata jsonb not null default '{}'::jsonb;
 
 drop trigger if exists trg_provider_connections_updated_at on provider_connections;
 create trigger trg_provider_connections_updated_at

@@ -34,6 +34,7 @@ Satu user bisa punya satu atau lebih workspace.
 | owner_user_id | uuid FK users.id | owner workspace |
 | name | text | nama workspace |
 | slug | text unique | URL-friendly identifier |
+| metadata | jsonb | workspace metadata; `metadata.onboarding` stores Quick start checklist dismiss/completion state |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
 
