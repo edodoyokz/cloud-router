@@ -264,6 +264,27 @@ export default function DashboardClient({ routerBaseUrl }) {
     }
   }
 
+  async function checkProviderHealth(providerId) {
+    setPendingActionId(`provider-check:${providerId}`);
+    setManagementStatus(null);
+    try {
+      const response = await fetch(`/api/providers/${providerId}/check`, {
+        method: 'POST',
+        headers: await authenticatedJsonHeaders()
+      });
+      const data = await parseJsonResponse(response, 'Failed to check provider health');
+      setManagementStatus({
+        type: data.health === 'healthy' ? 'success' : 'error',
+        message: data.message || 'Provider health check completed'
+      });
+      await loadResources();
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to check provider health' });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
   async function revokeApiKey(keyId) {
     setPendingActionId(`key:${keyId}`);
     setManagementStatus(null);
@@ -369,11 +390,19 @@ export default function DashboardClient({ routerBaseUrl }) {
               <span>Type: {provider.provider_type}</span>
               <span>Base URL: {provider.metadata?.base_url || '—'}</span>
               <span>Default model: {provider.metadata?.default_model || '—'}</span>
+              <span>Health: {provider.quota_state?.health || 'unknown'}</span>
+              <span>Last checked: {formatDate(provider.last_checked_at)}</span>
+              {provider.quota_state?.last_error_message ? <span>Last error: {provider.quota_state.last_error_message}</span> : null}
               <span>Created: {formatDate(provider.created_at)}</span>
               {provider.status !== 'disconnected' ? (
-                <button style={buttonStyle} disabled={pendingActionId === `provider:${provider.id}`} onClick={() => disconnectProvider(provider.id)} type="button">
-                  {pendingActionId === `provider:${provider.id}` ? 'Disconnecting…' : 'Disconnect provider'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button style={buttonStyle} disabled={pendingActionId === `provider-check:${provider.id}`} onClick={() => checkProviderHealth(provider.id)} type="button">
+                    {pendingActionId === `provider-check:${provider.id}` ? 'Checking…' : 'Check health'}
+                  </button>
+                  <button style={buttonStyle} disabled={pendingActionId === `provider:${provider.id}`} onClick={() => disconnectProvider(provider.id)} type="button">
+                    {pendingActionId === `provider:${provider.id}` ? 'Disconnecting…' : 'Disconnect provider'}
+                  </button>
+                </div>
               ) : null}
             </div>
           ))}
