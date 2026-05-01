@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseMiddlewareClient } from './lib/supabase-server.js';
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   if (!pathname.startsWith('/dashboard')) {
     return NextResponse.next();
