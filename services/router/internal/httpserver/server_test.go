@@ -95,7 +95,7 @@ func TestChatCompletionsForwardsToOpenAICompatibleProvider(t *testing.T) {
 		}
 		gotModel = "gpt-test-default"
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"id":"chatcmpl_x","choices":[]}`))
+		_, _ = w.Write([]byte(`{"id":"chatcmpl_x","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}}`))
 	}))
 	defer upstream.Close()
 
@@ -137,6 +137,61 @@ func TestChatCompletionsForwardsToOpenAICompatibleProvider(t *testing.T) {
 	}
 	if len(repo.UsageEvents) != 1 || repo.UsageEvents[0].Status != "success" {
 		t.Fatalf("expected one success usage event")
+	}
+	if repo.UsageEvents[0].PromptTokens != 10 || repo.UsageEvents[0].CompletionTokens != 5 || repo.UsageEvents[0].TotalTokens != 15 {
+		t.Fatalf("unexpected token usage: %+v", repo.UsageEvents[0])
+	}
+}
+
+func TestChatCompletionsRecordsZeroTokensWhenUsageMissing(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"chatcmpl_x","choices":[]}`))
+	}))
+	defer upstream.Close()
+
+	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	ciphertext, err := security.EncryptCredential(keyHex, []byte(`{"api_key":"sk-upstream"}`))
+	if err != nil {
+		t.Fatalf("encrypt: %v", err)
+	}
+
+	repo := store.NewMemoryRepository()
+	repo.APIKeys = []store.APIKeyRecord{{ID: "k1", WorkspaceID: "ws_1", KeyHash: "ec29b6f64e70ff4307ff0e5228e44f43258d3d8dd41a5f6c47519b4ac4f930e7"}}
+	repo.Steps = []store.PresetStep{{ProviderConnectionID: "p1", ProviderType: "openai_compatible", OrderIndex: 1}}
+	repo.Providers = []store.ProviderConnection{{
+		ID:                  "p1",
+		WorkspaceID:         "ws_1",
+		ProviderType:        "openai_compatible",
+		CredentialEncrypted: ciphertext,
+		Metadata:            map[string]any{"base_url": upstream.URL, "default_model": "gpt-test-default"},
+	}}
+
+	cfg := config.Load()
+	cfg.EncryptionKey = keyHex
+	s := NewWithOptions(Options{Repo: repo, Config: cfg, Client: http.DefaultClient})
+
+	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"auto","messages":[{"role":"user","content":"hi"}]}`))
+	req.Header.Set("Authorization", "Bearer nnr_test_123")
+	w := httptest.NewRecorder()
+
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("expected 200, got %d body=%s", w.Code, w.Body.String())
+	}
+	if len(repo.UsageEvents) != 1 {
+		t.Fatalf("expected one usage event")
+	}
+	if repo.UsageEvents[0].PromptTokens != 0 || repo.UsageEvents[0].CompletionTokens != 0 || repo.UsageEvents[0].TotalTokens != 0 {
+		t.Fatalf("expected zero token usage, got %+v", repo.UsageEvents[0])
+	}
+}
+
+func TestExtractTokenUsageComputesTotalWhenMissing(t *testing.T) {
+	usage := extractTokenUsage([]byte(`{"usage":{"prompt_tokens":7,"completion_tokens":3}}`))
+	if usage.PromptTokens != 7 || usage.CompletionTokens != 3 || usage.TotalTokens != 10 {
+		t.Fatalf("unexpected usage: %+v", usage)
 	}
 }
 

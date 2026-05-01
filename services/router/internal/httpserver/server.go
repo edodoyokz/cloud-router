@@ -183,7 +183,19 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			if attempt > 0 {
 				status = "fallback"
 			}
-			_ = s.repo.RecordUsage(r.Context(), store.UsageEvent{WorkspaceID: apiKey.WorkspaceID, ProviderConnectionID: provider.ID, APIKeyID: apiKey.ID, RequestID: "req_1", ModelRequested: requestedModel, ModelResolved: resolvedModel, Status: status})
+			usage := extractTokenUsage(resp.Body)
+			_ = s.repo.RecordUsage(r.Context(), store.UsageEvent{
+				WorkspaceID:          apiKey.WorkspaceID,
+				ProviderConnectionID: provider.ID,
+				APIKeyID:             apiKey.ID,
+				RequestID:            "req_1",
+				ModelRequested:       requestedModel,
+				ModelResolved:        resolvedModel,
+				Status:               status,
+				PromptTokens:         usage.PromptTokens,
+				CompletionTokens:     usage.CompletionTokens,
+				TotalTokens:          usage.TotalTokens,
+			})
 			return
 		}
 
@@ -197,6 +209,26 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
+}
+
+type responseUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+func extractTokenUsage(body []byte) responseUsage {
+	var payload struct {
+		Usage responseUsage `json:"usage"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return responseUsage{}
+	}
+	usage := payload.Usage
+	if usage.TotalTokens == 0 && (usage.PromptTokens > 0 || usage.CompletionTokens > 0) {
+		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+	}
+	return usage
 }
 
 func retryableStatus(status int) bool {
