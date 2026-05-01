@@ -14,7 +14,7 @@ Semua environment variables dikelompokkan per service. Buat file `.env` di root 
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | — | Supabase anonymous/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | — | Supabase service role key (server-side only, NEVER expose ke client) |
 | `ENCRYPTION_KEY` | yes | — | 32-byte hex key used by web API routes to encrypt provider API keys before persistence. |
-| `DEV_WORKSPACE_ID` | local only | — | Workspace UUID used by API routes before full Supabase Auth workspace resolution is implemented. Do not rely on this in production. |
+| `DEV_WORKSPACE_ID` | optional local fallback | — | Workspace UUID fallback when no bearer auth session is provided. Do not rely on this in production. |
 | `NEXT_PUBLIC_ROUTER_BASE_URL` | yes | `http://localhost:8080` | Base URL router data plane |
 | `NEXT_PUBLIC_APP_URL` | no | `http://localhost:3000` | Public URL web app |
 | `NEXTAUTH_SECRET` | yes | — | Secret untuk session encryption (jika pakai NextAuth) |
@@ -62,6 +62,8 @@ Generic OpenAI-compatible provider API keys disimpan encrypted di database, buka
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
+ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+DEV_WORKSPACE_ID=
 NEXT_PUBLIC_ROUTER_BASE_URL=https://router.yourdomain.com
 NEXT_PUBLIC_APP_URL=https://router.nusanexus.cloud
 NEXTAUTH_SECRET=your-random-secret-here

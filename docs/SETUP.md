@@ -42,7 +42,8 @@ npm run dev:web
 
 Buka `http://localhost:3000`.
 
-Open `http://localhost:3000/dashboard` to use the minimal dashboard.
+Open `/signup` to create an account, then `/login` and `/dashboard`.
+For local development without auth, `DEV_WORKSPACE_ID` can still be used as a fallback.
 
 ---
 

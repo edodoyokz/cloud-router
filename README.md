@@ -33,11 +33,12 @@ Notes:
 ## Current Thin Slice
 - Minimal `/dashboard` page for provider connection and API key generation
 - Supabase-backed provider/API key persistence
+- Thin Supabase Auth login/signup with hybrid workspace auto-create
 - Go router can read Supabase config when env vars are set
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Wire Supabase Auth and remove `DEV_WORKSPACE_ID` dependency
-2. Add provider/API key listing and revoke/disconnect flows
-3. Add usage dashboard
-4. Add provider health checks
+1. Add provider/API key listing and revoke/disconnect flows
+2. Add usage dashboard
+3. Add provider health checks
+4. Add production cookie/SSR auth polish and workspace switching
