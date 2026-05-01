@@ -68,6 +68,10 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [managementStatus, setManagementStatus] = useState(null);
   const [loadingResources, setLoadingResources] = useState(false);
   const [pendingActionId, setPendingActionId] = useState(null);
+  const [usagePeriod, setUsagePeriod] = useState('today');
+  const [usage, setUsage] = useState(null);
+  const [usageStatus, setUsageStatus] = useState(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
 
   const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
   const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
@@ -147,6 +151,54 @@ export default function DashboardClient({ routerBaseUrl }) {
       cancelled = true;
     };
   }, [authenticatedJsonHeaders]);
+
+  const loadUsage = useCallback(async function loadUsage(period = usagePeriod) {
+    setLoadingUsage(true);
+    setUsageStatus(null);
+    try {
+      const response = await fetch(`/api/usage?period=${encodeURIComponent(period)}&limit=50`, {
+        headers: await authenticatedJsonHeaders()
+      });
+      const data = await parseJsonResponse(response, 'Failed to load usage');
+      setUsage(data);
+    } catch (error) {
+      setUsageStatus({ type: 'error', message: error.message || 'Failed to load usage' });
+    } finally {
+      setLoadingUsage(false);
+    }
+  }, [authenticatedJsonHeaders, usagePeriod]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialUsage() {
+      try {
+        const headers = await authenticatedJsonHeaders();
+        if (cancelled) return;
+        setLoadingUsage(true);
+        setUsageStatus(null);
+
+        const response = await fetch(`/api/usage?period=${encodeURIComponent(usagePeriod)}&limit=50`, { headers });
+        const data = await parseJsonResponse(response, 'Failed to load usage');
+        if (cancelled) return;
+        setUsage(data);
+      } catch (error) {
+        if (!cancelled) setUsageStatus({ type: 'error', message: error.message || 'Failed to load usage' });
+      } finally {
+        if (!cancelled) setLoadingUsage(false);
+      }
+    }
+
+    loadInitialUsage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedJsonHeaders, usagePeriod]);
+
+  function selectUsagePeriod(period) {
+    setUsagePeriod(period);
+  }
 
   async function connectProvider(event) {
     event.preventDefault();
