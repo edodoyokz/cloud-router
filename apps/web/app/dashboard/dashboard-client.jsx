@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildOnboardingSnippets, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
 import { ALLOWED_PROVIDER_TAGS, normalizeProviderTags, providerTagLabel } from '../../lib/provider-tags.js';
 import { buildTagBasedFallbackSuggestion } from '../../lib/provider-routing-suggestions.js';
+import { explainProviderHealth, explainUsageEvent } from '../../lib/error-explanations.js';
 import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
 const inputStyle = {
@@ -211,6 +212,39 @@ function ProviderTagToggleGroup({ selectedTags, onToggle, disabled = false }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+function ErrorExplanationPanel({ explanation, heading = 'Why this happened' }) {
+  if (!explanation) return null;
+  const isError = explanation.severity === 'error';
+  const isWarning = explanation.severity === 'warning';
+  const border = isError ? '#fecaca' : isWarning ? '#fde68a' : '#bfdbfe';
+  const background = isError ? '#fef2f2' : isWarning ? '#fffbeb' : '#eff6ff';
+  const color = isError ? '#991b1b' : isWarning ? '#92400e' : '#1e40af';
+
+  return (
+    <div style={{ border: `1px solid ${border}`, background, color, borderRadius: 12, padding: 12, display: 'grid', gap: 8 }}>
+      <strong>{heading}</strong>
+      <div>
+        <strong>{explanation.title}</strong>
+        <p style={{ margin: '4px 0 0' }}>{explanation.explanation}</p>
+      </div>
+      {explanation.likelyCause ? (
+        <div>
+          <strong>Likely cause</strong>
+          <p style={{ margin: '4px 0 0' }}>{explanation.likelyCause}</p>
+        </div>
+      ) : null}
+      {explanation.nextActions?.length > 0 ? (
+        <div>
+          <strong>Try this</strong>
+          <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+            {explanation.nextActions.map((action) => <li key={action}>{action}</li>)}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1169,6 +1203,7 @@ export default function DashboardClient({ routerBaseUrl }) {
                 <span>Error: {event.error_code || '—'}</span>
                 <span>Cost: {event.pricing_rule_missing ? 'not configured' : formatUsd(event.estimated_cost_usd)}</span>
                 <span>Created: {formatDate(event.created_at)}</span>
+                <ErrorExplanationPanel explanation={explainUsageEvent(event)} />
               </div>
             ))}
           </div>
@@ -1293,6 +1328,7 @@ export default function DashboardClient({ routerBaseUrl }) {
               <span>Last checked: {formatDate(provider.last_checked_at)}</span>
               {provider.quota_state?.last_error_message ? <span>Last error: {provider.quota_state.last_error_message}</span> : null}
               <span>Created: {formatDate(provider.created_at)}</span>
+              <ErrorExplanationPanel explanation={explainProviderHealth(provider)} heading="Health explanation" />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {provider.status !== 'disconnected' ? (
                   <>
