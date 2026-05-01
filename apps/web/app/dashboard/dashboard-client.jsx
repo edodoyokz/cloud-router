@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { buildCurlSnippet, buildEnvSnippet, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
+import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
 const inputStyle = {
   width: '100%',
@@ -70,6 +71,19 @@ export default function DashboardClient({ routerBaseUrl }) {
     setProviderForm((current) => ({ ...current, [field]: value }));
   }
 
+  async function authenticatedJsonHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      if (token) headers.Authorization = `Bearer ${token}`;
+    } catch {
+      // Missing client env should not break DEV_WORKSPACE_ID fallback.
+    }
+    return headers;
+  }
+
   async function connectProvider(event) {
     event.preventDefault();
     setProviderPending(true);
@@ -77,7 +91,7 @@ export default function DashboardClient({ routerBaseUrl }) {
     try {
       const response = await fetch('/api/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authenticatedJsonHeaders(),
         body: JSON.stringify({
           provider_type: 'openai_compatible',
           auth_method: 'api_key',
@@ -102,7 +116,7 @@ export default function DashboardClient({ routerBaseUrl }) {
     try {
       const response = await fetch('/api/endpoint/keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authenticatedJsonHeaders(),
         body: JSON.stringify({ name: keyName })
       });
       const data = await response.json();
@@ -118,6 +132,15 @@ export default function DashboardClient({ routerBaseUrl }) {
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
+      <section style={cardStyle}>
+        <strong>Authenticated mode</strong>
+        <p style={{ margin: 0, color: '#4b5563' }}>Log in to resolve workspace from your Supabase session. Local dev can still use DEV_WORKSPACE_ID.</p>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <a href="/login">Log in</a>
+          <a href="/signup">Sign up</a>
+        </div>
+      </section>
+
       <section style={cardStyle}>
         <div>
           <h2 style={{ margin: 0 }}>Connect provider</h2>
