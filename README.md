@@ -30,8 +30,14 @@ Notes:
 - Full DB-backed operation still requires Supabase repository wiring.
 - Router unit tests currently run with the in-memory repository.
 
+## Current Thin Slice
+- Minimal `/dashboard` page for provider connection and API key generation
+- Supabase-backed provider/API key persistence
+- Go router can read Supabase config when env vars are set
+- Non-streaming OpenAI-compatible chat completions
+
 ## Next Build Steps
-1. scaffold web app
-2. scaffold Go router service
-3. connect Supabase schema
-4. wire API contract between web and router
+1. Wire Supabase Auth and remove `DEV_WORKSPACE_ID` dependency
+2. Add provider/API key listing and revoke/disconnect flows
+3. Add usage dashboard
+4. Add provider health checks

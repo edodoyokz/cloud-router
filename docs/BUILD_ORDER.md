@@ -22,6 +22,8 @@
 6. Endpoint page
 7. Usage page
 
+Note: A minimal dashboard thin slice now exists at `/dashboard` for provider connection, API key generation, and endpoint snippets.
+
 ## Phase 4 — Router Engine
 1. OpenAI-compatible endpoint
 2. Provider resolution

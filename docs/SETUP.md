@@ -42,6 +42,8 @@ npm run dev:web
 
 Buka `http://localhost:3000`.
 
+Open `http://localhost:3000/dashboard` to use the minimal dashboard.
+
 ---
 
 ## 4. Run Router Service (Go)
