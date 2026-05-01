@@ -72,12 +72,19 @@ Creates a new provider connection.
 ```json
 {
   "id": "uuid",
-  "provider_type": "kimi",
-  "display_name": "Kimi API",
+  "provider_type": "openai_compatible",
+  "display_name": "My Provider",
+  "auth_method": "api_key",
   "status": "active",
+  "metadata": {
+    "base_url": "https://api.example.com",
+    "default_model": "gpt-4o-mini"
+  },
   "created_at": "2026-01-01T00:00:00Z"
 }
 ```
+
+For the thin slice, provider creation ensures a default routing preset exists and appends the provider as a `failover` step.
 
 **Errors:** `401` unauthorized, `400` validation error, `409` duplicate provider
 
@@ -206,7 +213,7 @@ Generate a new API key.
 }
 ```
 
-> `raw_key` is shown **once only**. It is not stored.
+> `raw_key` is shown **once only**. It is not stored. Generated keys use the `nnr_` prefix.
 
 **Errors:** `401` unauthorized, `400` validation error
 

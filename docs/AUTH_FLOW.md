@@ -27,6 +27,8 @@ Browser → Vercel (Next.js) → Supabase Auth
 6. Setiap request ke `/api/*` route, Next.js validasi JWT via Supabase client
 7. JWT berisi `user.id` yang dipakai untuk resolve workspace
 
+> Thin-slice local/dev bridge: until full Supabase Auth workspace resolution is wired in API routes, `DEV_WORKSPACE_ID` is used as a local-only fallback and must not be relied on in production.
+
 ### JWT Lifecycle
 
 | Event | Action |
