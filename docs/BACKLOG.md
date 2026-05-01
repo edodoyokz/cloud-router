@@ -14,7 +14,7 @@
 - [x] Fallback chain working end-to-end
 
 ## P1 — Should Have
-- [ ] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
+- [x] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
 - [ ] Better onboarding wizard
 - [ ] Usage charts
 - [ ] Error explanation panel
@@ -31,6 +31,7 @@
 - Workspace/auth polish thin slice is implemented in `/dashboard` (current workspace card + sign out).
 - Token accounting thin slice is implemented for successful non-streaming chat completions.
 - Pricing/cost estimation thin slice is implemented with manual workspace pricing rules.
+- Onboarding snippets thin slice is implemented in `/dashboard` Endpoint config.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
