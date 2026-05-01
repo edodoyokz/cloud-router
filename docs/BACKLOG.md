@@ -1,0 +1,43 @@
+# Backlog v0.1 — 9router Cloud
+
+## P0 — Must Have
+- [ ] Landing page with simple value prop
+- [ ] Auth system
+- [ ] Workspace model
+- [ ] Connect provider flow
+- [ ] Secure credential storage
+- [ ] Preset routing creator
+- [ ] OpenAI-compatible endpoint
+- [ ] API key generation
+- [ ] Basic usage dashboard
+- [ ] Provider health status
+- [ ] Fallback chain working end-to-end
+
+## P1 — Should Have
+- [ ] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
+- [ ] Better onboarding wizard
+- [ ] Usage charts
+- [ ] Error explanation panel
+- [ ] Reconnect flow
+- [ ] Provider tags: primary / backup / free / cheap
+
+## P2 — Nice to Have
+- [ ] Team workspace
+- [ ] Shared presets
+- [ ] Model alias marketplace
+- [ ] More detailed analytics
+- [ ] Scheduled usage reports
+- [ ] Multi-region routing
+
+## Build Order
+
+> See [`BUILD_ORDER.md`](./BUILD_ORDER.md) for detailed phased build plan.
+
+## Done Criteria for v0.1
+- User can sign up
+- User can connect at least one provider
+- User can create one preset
+- User can copy endpoint config
+- User can send a request successfully
+- Router can fallback once
+- Dashboard shows active state
