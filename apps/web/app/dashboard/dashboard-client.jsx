@@ -266,8 +266,18 @@ export default function DashboardClient({ routerBaseUrl }) {
     input_usd_per_1m_tokens: '',
     output_usd_per_1m_tokens: ''
   });
+  const [onboarding, setOnboarding] = useState(null);
+  const [loadingOnboarding, setLoadingOnboarding] = useState(false);
+  const [onboardingStatus, setOnboardingStatus] = useState(null);
 
   const onboardingSnippets = buildOnboardingSnippets({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
+  const onboardingTargets = {
+    connect_provider: 'connect-provider',
+    check_provider_health: 'connected-providers',
+    generate_router_key: 'generate-router-key',
+    copy_client_snippet: 'endpoint-config',
+    send_first_request: 'endpoint-config'
+  };
 
   function updateProviderField(field, value) {
     setProviderForm((current) => ({ ...current, [field]: value }));
@@ -346,6 +356,34 @@ export default function DashboardClient({ routerBaseUrl }) {
     } finally {
       setLoadingWorkspace(false);
     }
+  }, [authenticatedJsonHeaders]);
+
+  const loadOnboarding = useCallback(async function loadOnboarding() {
+    setLoadingOnboarding(true);
+    setOnboardingStatus(null);
+    try {
+      const response = await fetch('/api/onboarding', {
+        headers: await authenticatedJsonHeaders(),
+        cache: 'no-store'
+      });
+      const data = await parseJsonResponse(response, 'Failed to load onboarding checklist');
+      setOnboarding(data);
+    } catch (error) {
+      setOnboardingStatus({ type: 'error', message: error.message || 'Failed to load onboarding checklist' });
+    } finally {
+      setLoadingOnboarding(false);
+    }
+  }, [authenticatedJsonHeaders]);
+
+  const updateOnboarding = useCallback(async function updateOnboarding(payload) {
+    const response = await fetch('/api/onboarding', {
+      method: 'PATCH',
+      headers: await authenticatedJsonHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const data = await parseJsonResponse(response, 'Failed to update onboarding checklist');
+    setOnboarding(data);
+    return data;
   }, [authenticatedJsonHeaders]);
 
   const loadResources = useCallback(async function loadResources() {
@@ -573,6 +611,37 @@ export default function DashboardClient({ routerBaseUrl }) {
     };
   }, [authenticatedJsonHeaders]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialOnboarding() {
+      try {
+        const headers = await authenticatedJsonHeaders();
+        if (cancelled) return;
+        setLoadingOnboarding(true);
+        setOnboardingStatus(null);
+
+        const response = await fetch('/api/onboarding', {
+          headers,
+          cache: 'no-store'
+        });
+        const data = await parseJsonResponse(response, 'Failed to load onboarding checklist');
+        if (cancelled) return;
+        setOnboarding(data);
+      } catch (error) {
+        if (!cancelled) setOnboardingStatus({ type: 'error', message: error.message || 'Failed to load onboarding checklist' });
+      } finally {
+        if (!cancelled) setLoadingOnboarding(false);
+      }
+    }
+
+    loadInitialOnboarding();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedJsonHeaders]);
+
   function updateDraftModelAlias(index, value) {
     setPresetDraftSteps((current) => current.map((step, stepIndex) => (
       stepIndex === index ? { ...step, model_alias: value } : step
@@ -722,6 +791,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       setProviderStatus({ type: 'success', message: `Provider connected: ${data.display_name}` });
       setProviderForm((current) => ({ ...current, api_key: '' }));
       await loadResources();
+      await loadOnboarding();
     } catch (error) {
       setProviderStatus({ type: 'error', message: error.message || 'Network error connecting provider' });
     } finally {
@@ -743,6 +813,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       setRawApiKey(data.raw_key);
       setKeyStatus({ type: 'success', message: 'Your key was generated. Copy it now. It will not be shown again.' });
       await loadResources();
+      await loadOnboarding();
     } catch (error) {
       setKeyStatus({ type: 'error', message: error.message || 'Network error generating API key' });
     } finally {
@@ -761,6 +832,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       await parseJsonResponse(response, 'Failed to disconnect provider');
       setManagementStatus({ type: 'success', message: 'Provider disconnected.' });
       await loadResources();
+      await loadOnboarding();
     } catch (error) {
       setManagementStatus({ type: 'error', message: error.message || 'Failed to disconnect provider' });
     } finally {
@@ -782,6 +854,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         message: data.message || 'Provider health check completed'
       });
       await loadResources();
+      await loadOnboarding();
     } catch (error) {
       setManagementStatus({ type: 'error', message: error.message || 'Failed to check provider health' });
     } finally {
@@ -807,6 +880,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       });
       await loadResources();
       await loadPreset();
+      await loadOnboarding();
     } catch (error) {
       setManagementStatus({ type: 'error', message: error.message || 'Failed to save provider tags' });
     } finally {
@@ -828,6 +902,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       cancelReconnect();
       await loadResources();
       await loadPreset();
+      await loadOnboarding();
     } catch (error) {
       setManagementStatus({ type: 'error', message: error.message || 'Failed to reconnect provider' });
     } finally {
@@ -846,6 +921,7 @@ export default function DashboardClient({ routerBaseUrl }) {
       await parseJsonResponse(response, 'Failed to revoke API key');
       setManagementStatus({ type: 'success', message: 'API key revoked.' });
       await loadResources();
+      await loadOnboarding();
     } catch (error) {
       setManagementStatus({ type: 'error', message: error.message || 'Failed to revoke API key' });
     } finally {
@@ -857,6 +933,39 @@ export default function DashboardClient({ routerBaseUrl }) {
   const availablePresetProviders = providers.filter((provider) => (
     provider.status !== 'disconnected' && !draftProviderIds.has(provider.id)
   ));
+
+  async function handleCopySnippet(content) {
+    try {
+      await navigator.clipboard.writeText(content);
+      try {
+        await updateOnboarding({ completed_steps: ['copy_client_snippet'] });
+        setOnboardingStatus({ type: 'success', message: 'Snippet copied. Quick start progress updated.' });
+      } catch (error) {
+        setOnboardingStatus({ type: 'error', message: `Snippet copied, but failed to persist progress: ${error.message}` });
+      }
+    } catch (error) {
+      setOnboardingStatus({ type: 'error', message: error.message || 'Failed to copy snippet' });
+    }
+  }
+
+  async function toggleOnboardingDismissed(dismissed) {
+    setOnboardingStatus(null);
+    try {
+      await updateOnboarding({ dismissed });
+      setOnboardingStatus({
+        type: 'success',
+        message: dismissed ? 'Quick start dismissed. You can show it again anytime.' : 'Quick start is visible again.'
+      });
+    } catch (error) {
+      setOnboardingStatus({ type: 'error', message: error.message || 'Failed to update quick start visibility' });
+    }
+  }
+
+  function scrollToOnboardingTarget(stepId) {
+    const targetId = onboardingTargets[stepId];
+    if (!targetId) return;
+    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
@@ -896,9 +1005,66 @@ export default function DashboardClient({ routerBaseUrl }) {
         </div>
       </section>
 
+      {onboardingStatus ? <StatusMessage status={onboardingStatus} /> : null}
+
+      {loadingOnboarding ? <p>Loading quick start…</p> : null}
+      {!loadingOnboarding && onboarding && !onboarding.dismissed ? (
+        <section style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Quick start</h2>
+              <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Complete the onboarding checklist to get routing live.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => toggleOnboardingDismissed(true)}
+              style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }}
+            >
+              Dismiss
+            </button>
+          </div>
+          <div>
+            <strong>{onboarding.completed_count} / {onboarding.total_count} completed</strong>
+            <div style={{ height: 10, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden', marginTop: 8 }}>
+              <div
+                style={{
+                  width: `${Math.round((onboarding.completed_count / Math.max(1, onboarding.total_count)) * 100)}%`,
+                  height: '100%',
+                  borderRadius: 999,
+                  background: '#16a34a'
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {onboarding.steps.map((step) => (
+              <div key={step.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 12, display: 'grid', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                  <strong>{step.complete ? '✅' : '⬜'} {step.label}</strong>
+                  <button type="button" onClick={() => scrollToOnboardingTarget(step.id)} style={buttonStyle}>Go</button>
+                </div>
+                <span style={{ color: '#4b5563' }}>{step.description}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!loadingOnboarding && onboarding?.dismissed ? (
+        <section style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <div>
+              <h2 style={{ margin: 0 }}>Quick start hidden</h2>
+              <p style={{ margin: '6px 0 0', color: '#4b5563' }}>You dismissed onboarding for this workspace.</p>
+            </div>
+            <button type="button" onClick={() => toggleOnboardingDismissed(false)} style={buttonStyle}>Show quick start</button>
+          </div>
+        </section>
+      ) : null}
+
       {managementStatus ? <StatusMessage status={managementStatus} /> : null}
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="usage-dashboard">
         <div>
           <h2 style={{ margin: 0 }}>Usage</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Workspace usage from router requests.</p>
@@ -1043,7 +1209,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="connected-providers">
         <div>
           <h2 style={{ margin: 0 }}>Connected providers</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Providers available to your default routing preset.</p>
@@ -1153,7 +1319,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="default-fallback-chain">
         <div>
           <h2 style={{ margin: 0 }}>Default fallback chain</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router tries providers in this order for model <code>auto</code>.</p>
@@ -1231,7 +1397,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="connect-provider">
         <div>
           <h2 style={{ margin: 0 }}>Connect provider</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Add a generic OpenAI-compatible provider.</p>
@@ -1262,7 +1428,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         {providerStatus ? <StatusMessage status={providerStatus} /> : null}
       </section>
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="generate-router-key">
         <div>
           <h2 style={{ margin: 0 }}>Generate router API key</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>The raw key is shown once. Copy it before leaving this page.</p>
@@ -1303,7 +1469,7 @@ export default function DashboardClient({ routerBaseUrl }) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={cardStyle} id="endpoint-config">
         <div>
           <h2 style={{ margin: 0 }}>Endpoint config</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router base URL: <code>{normalizedRouterBaseUrl}</code></p>
@@ -1319,6 +1485,9 @@ export default function DashboardClient({ routerBaseUrl }) {
                 <p style={{ margin: '6px 0 0', color: '#4b5563' }}>{snippet.description}</p>
               </div>
               <pre style={codeStyle}>{snippet.content}</pre>
+              <button style={{ ...buttonStyle, width: 'fit-content' }} type="button" onClick={() => handleCopySnippet(snippet.content)}>
+                Copy
+              </button>
             </div>
           ))}
         </div>
