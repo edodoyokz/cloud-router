@@ -570,7 +570,9 @@ export default function DashboardClient({ routerBaseUrl }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
           <StatCard label="Requests" value={formatNumber(usage?.summary?.total_requests)} />
-          <StatCard label="Tokens" value={formatNumber(usage?.summary?.total_tokens)} />
+          <StatCard label="Total tokens" value={formatNumber(usage?.summary?.total_tokens)} />
+          <StatCard label="Prompt tokens" value={formatNumber(usage?.summary?.prompt_tokens)} />
+          <StatCard label="Completion tokens" value={formatNumber(usage?.summary?.completion_tokens)} />
           <StatCard label="Success rate" value={formatPercent(usage?.summary?.success_rate)} />
           <StatCard label="Fallbacks" value={formatNumber(usage?.summary?.fallback_count)} />
           <StatCard label="Failures" value={formatNumber(usage?.summary?.failed_count)} />
@@ -586,7 +588,7 @@ export default function DashboardClient({ routerBaseUrl }) {
                 <strong>{event.status}</strong>
                 <span>Requested: {event.model_requested || '—'}</span>
                 <span>Resolved: {event.model_resolved || '—'}</span>
-                <span>Tokens: {formatNumber(event.total_tokens)}</span>
+                <span>Tokens: {formatNumber(event.total_tokens)} total / {formatNumber(event.prompt_tokens)} prompt / {formatNumber(event.completion_tokens)} completion</span>
                 <span>Error: {event.error_code || '—'}</span>
                 <span>Created: {formatDate(event.created_at)}</span>
               </div>
