@@ -39,6 +39,7 @@ Notes:
 - Dashboard can edit the default fallback chain used by the router
 - Dashboard can reconnect providers and rotate provider API keys
 - Dashboard can tag providers as primary, backup, free, or cheap routing hints
+- Dashboard can suggest a default fallback-chain draft from provider routing hint tags
 - Dashboard can configure manual pricing rules and estimate usage cost
 - Dashboard shows onboarding snippets for Claude Code, Codex, OpenClaw, Cursor, env, and cURL
 - Dashboard shows a persisted Quick start onboarding checklist
@@ -51,6 +52,5 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add tag-based routing policy suggestions
-2. Add error explanation panel
-3. Add team workspace collaboration
+1. Add error explanation panel
+2. Add team workspace collaboration

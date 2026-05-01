@@ -164,6 +164,7 @@ Notes:
 20. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.
 21. Tag a provider as `primary` or `backup` in `/dashboard`, save tags, and confirm the fallback-chain editor shows those tag hints.
 22. Use the `/dashboard` Quick start card to confirm progress changes as provider, health, key, snippet copy, and first request milestones are completed. Dismiss and show the card again to verify workspace-persisted visibility.
+23. Use provider tags in `/dashboard`, apply the tag-based fallback-chain suggestion to the draft, then click `Save chain` to persist the order.
 
 ---
 

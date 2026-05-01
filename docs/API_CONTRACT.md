@@ -176,7 +176,7 @@ Allowed tags: `primary`, `backup`, `free`, `cheap`. Unknown tags are ignored dur
 }
 ```
 
-The response never includes `credential_encrypted` or raw credential material. Tags are routing hints only; router behavior is unchanged in this MVP slice.
+The response never includes `credential_encrypted` or raw credential material. Tags do not directly change router behavior. The dashboard can use them to suggest a default fallback-chain draft, but routing changes only after the user saves the default chain.
 
 **Errors:** `401` unauthorized, `404` not found, `400` validation error
 
@@ -295,6 +295,8 @@ Replaces the default fallback chain.
 ```
 
 **Errors:** `401` unauthorized, `400` validation error, `404` provider not found
+
+The dashboard may build a local draft suggestion from provider tags (`primary`, `cheap`, `free`, `backup`). This suggestion is not persisted until `PUT /api/presets/default` is called.
 
 > MVP note: `/api/presets/default` is the implemented preset route for the current thin slice.
 
