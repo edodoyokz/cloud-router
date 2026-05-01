@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildOnboardingSnippets, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
+import { ALLOWED_PROVIDER_TAGS, normalizeProviderTags, providerTagLabel } from '../../lib/provider-tags.js';
 import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
 const inputStyle = {
@@ -169,13 +170,58 @@ function StatusBreakdown({ statuses }) {
   );
 }
 
+function ProviderTagChips({ tags }) {
+  const normalized = normalizeProviderTags(tags);
+  if (normalized.length === 0) return <span style={{ color: '#6b7280' }}>No tags</span>;
+  return (
+    <span style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {normalized.map((tag) => (
+        <span key={tag} style={{ border: '1px solid #bfdbfe', background: '#eff6ff', color: '#1e40af', borderRadius: 999, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>
+          {providerTagLabel(tag)}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function ProviderTagToggleGroup({ selectedTags, onToggle, disabled = false }) {
+  const selected = normalizeProviderTags(selectedTags);
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      {ALLOWED_PROVIDER_TAGS.map((tag) => {
+        const active = selected.includes(tag);
+        return (
+          <button
+            key={tag}
+            type="button"
+            onClick={() => onToggle(tag)}
+            disabled={disabled}
+            style={{
+              border: `1px solid ${active ? '#2563eb' : '#d0d7de'}`,
+              background: active ? '#eff6ff' : '#fff',
+              color: active ? '#1e40af' : '#374151',
+              borderRadius: 999,
+              padding: '6px 10px',
+              fontWeight: 700,
+              cursor: disabled ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {providerTagLabel(tag)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function DashboardClient({ routerBaseUrl }) {
   const normalizedRouterBaseUrl = useMemo(() => normalizeRouterBaseUrl(routerBaseUrl), [routerBaseUrl]);
   const [providerForm, setProviderForm] = useState({
     display_name: 'My OpenAI-compatible Provider',
     base_url: 'https://api.openai.com',
     default_model: 'gpt-4o-mini',
-    api_key: ''
+    api_key: '',
+    tags: []
   });
   const [keyName, setKeyName] = useState('Claude Code laptop');
   const [rawApiKey, setRawApiKey] = useState('');
@@ -185,6 +231,7 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [keyPending, setKeyPending] = useState(false);
   const [providers, setProviders] = useState([]);
   const [apiKeys, setApiKeys] = useState([]);
+  const [providerTagDrafts, setProviderTagDrafts] = useState({});
   const [managementStatus, setManagementStatus] = useState(null);
   const [loadingResources, setLoadingResources] = useState(false);
   const [pendingActionId, setPendingActionId] = useState(null);
@@ -224,6 +271,32 @@ export default function DashboardClient({ routerBaseUrl }) {
 
   function updateProviderField(field, value) {
     setProviderForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function providerTags(provider) {
+    return normalizeProviderTags(provider?.metadata?.tags);
+  }
+
+  function toggleTagList(tags, tag) {
+    const current = new Set(normalizeProviderTags(tags));
+    if (current.has(tag)) current.delete(tag);
+    else current.add(tag);
+    return normalizeProviderTags(Array.from(current));
+  }
+
+  function toggleProviderFormTag(tag) {
+    setProviderForm((current) => ({ ...current, tags: toggleTagList(current.tags, tag) }));
+  }
+
+  function providerTagDraft(provider) {
+    return providerTagDrafts[provider.id] || providerTags(provider);
+  }
+
+  function toggleProviderDraftTag(provider, tag) {
+    setProviderTagDrafts((current) => ({
+      ...current,
+      [provider.id]: toggleTagList(current[provider.id] || providerTags(provider), tag)
+    }));
   }
 
   function startReconnect(provider) {
@@ -716,6 +789,31 @@ export default function DashboardClient({ routerBaseUrl }) {
     }
   }
 
+  async function saveProviderTags(provider) {
+    setPendingActionId(`provider-tags:${provider.id}`);
+    setManagementStatus(null);
+    try {
+      const response = await fetch(`/api/providers/${provider.id}/tags`, {
+        method: 'PATCH',
+        headers: await authenticatedJsonHeaders(),
+        body: JSON.stringify({ tags: providerTagDraft(provider) })
+      });
+      await parseJsonResponse(response, 'Failed to save provider tags');
+      setManagementStatus({ type: 'success', message: 'Provider tags saved.' });
+      setProviderTagDrafts((current) => {
+        const next = { ...current };
+        delete next[provider.id];
+        return next;
+      });
+      await loadResources();
+      await loadPreset();
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to save provider tags' });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
   async function reconnectProvider(providerId) {
     setPendingActionId(`provider-reconnect:${providerId}`);
     setManagementStatus(null);
@@ -960,6 +1058,23 @@ export default function DashboardClient({ routerBaseUrl }) {
               <span>Type: {provider.provider_type}</span>
               <span>Base URL: {provider.metadata?.base_url || '—'}</span>
               <span>Default model: {provider.metadata?.default_model || '—'}</span>
+              <div style={{ display: 'grid', gap: 8 }}>
+                <strong>Routing hints</strong>
+                <ProviderTagChips tags={providerTags(provider)} />
+                <ProviderTagToggleGroup
+                  selectedTags={providerTagDraft(provider)}
+                  onToggle={(tag) => toggleProviderDraftTag(provider, tag)}
+                  disabled={pendingActionId === `provider-tags:${provider.id}`}
+                />
+                <button
+                  style={{ ...buttonStyle, width: 'fit-content' }}
+                  type="button"
+                  onClick={() => saveProviderTags(provider)}
+                  disabled={pendingActionId === `provider-tags:${provider.id}`}
+                >
+                  {pendingActionId === `provider-tags:${provider.id}` ? 'Saving tags…' : 'Save tags'}
+                </button>
+              </div>
               <span>Health: {provider.quota_state?.health || 'unknown'}</span>
               <span>Last checked: {formatDate(provider.last_checked_at)}</span>
               {provider.quota_state?.last_error_message ? <span>Last error: {provider.quota_state.last_error_message}</span> : null}
@@ -1054,6 +1169,7 @@ export default function DashboardClient({ routerBaseUrl }) {
               <strong>#{index + 1} {step.display_name}</strong>
               <span>Status: {step.status}</span>
               <span>Health: {step.health || 'unknown'}</span>
+              <ProviderTagChips tags={providers.find((provider) => provider.id === step.provider_connection_id)?.metadata?.tags} />
               {step.status === 'error' ? <span style={{ color: '#92400e' }}>Warning: this provider is currently marked error.</span> : null}
               <label style={labelStyle}>
                 Model override optional
@@ -1079,11 +1195,15 @@ export default function DashboardClient({ routerBaseUrl }) {
             Provider
             <select style={inputStyle} value={addPresetProviderId} onChange={(event) => setAddPresetProviderId(event.target.value)}>
               <option value="">Select provider…</option>
-              {availablePresetProviders.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.display_name} — {provider.status} / {provider.quota_state?.health || 'unknown'}
-                </option>
-              ))}
+              {availablePresetProviders.map((provider) => {
+                const tags = providerTags(provider);
+                const tagSuffix = tags.length > 0 ? ` · ${tags.map(providerTagLabel).join(', ')}` : '';
+                return (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.display_name} — {provider.status} / {provider.quota_state?.health || 'unknown'}{tagSuffix}
+                  </option>
+                );
+              })}
             </select>
           </label>
           <label style={labelStyle}>
@@ -1132,6 +1252,10 @@ export default function DashboardClient({ routerBaseUrl }) {
           <label style={labelStyle}>
             Provider API key
             <input style={inputStyle} type="password" value={providerForm.api_key} onChange={(event) => updateProviderField('api_key', event.target.value)} placeholder="sk-..." />
+          </label>
+          <label style={labelStyle}>
+            Routing hint tags
+            <ProviderTagToggleGroup selectedTags={providerForm.tags} onToggle={toggleProviderFormTag} disabled={providerPending} />
           </label>
           <button style={buttonStyle} disabled={providerPending} type="submit">{providerPending ? 'Connecting…' : 'Connect provider'}</button>
         </form>
