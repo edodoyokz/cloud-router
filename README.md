@@ -37,6 +37,8 @@ Notes:
 - Dashboard shows usage charts and provider/model/status breakdowns
 - Dashboard can run provider health checks and display provider health state
 - Dashboard explains common usage and provider health errors without storing prompts or provider response bodies
+- Authenticated router failures are recorded as zero-token usage events for dashboard explanations
+- Authenticated router failures are recorded as zero-token usage events for dashboard explanations
 - Dashboard can edit the default fallback chain used by the router
 - Dashboard can reconnect providers and rotate provider API keys
 - Dashboard can tag providers as primary, backup, free, or cheap routing hints

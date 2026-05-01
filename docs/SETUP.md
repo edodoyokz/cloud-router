@@ -166,6 +166,7 @@ Notes:
 22. Use the `/dashboard` Quick start card to confirm progress changes as provider, health, key, snippet copy, and first request milestones are completed. Dismiss and show the card again to verify workspace-persisted visibility.
 23. Use provider tags in `/dashboard`, apply the tag-based fallback-chain suggestion to the draft, then click `Save chain` to persist the order.
 24. Trigger or inspect a failed/fallback usage event and a provider health warning/error, then confirm the dashboard shows plain-language explanations and suggested next actions.
+25. Trigger a router failure (e.g. missing preset or fallback exhaustion) with a valid router API key and confirm `/api/usage` shows a `failed` event with a structured `error_code` (e.g. `preset_not_found`, `fallback_exhausted`) and all token counts set to `0`.
 
 ---
 

@@ -133,6 +133,8 @@ Log usage dasar untuk dashboard.
 | error_code | text nullable | kalau gagal |
 | created_at | timestamptz | default now() |
 
+> **Failure events** use the same `usage_events` table with `status = "failed"`, `error_code` set to a structured code (e.g. `preset_not_found`, `fallback_exhausted`, `provider_request_failed`), and `prompt_tokens`, `completion_tokens`, `total_tokens` set to `0`. Failure events never store prompts, completions, provider response bodies, or credential material.
+
 ### 9. model_pricing_rules
 Manual workspace pricing rules used for cost estimation.
 

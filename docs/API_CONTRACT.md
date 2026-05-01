@@ -605,6 +605,8 @@ Token fields are parsed from successful OpenAI-compatible provider responses whe
 
 Dashboard usage-event explanations are derived client-side from each event `status` and `error_code` (for example: fallback, invalid key, provider failure). No prompt contents or provider response bodies are stored or returned for these explanations.
 
+On the router data plane, authenticated failures (after API-key resolution succeeds) are recorded as `usage_events` with `status = "failed"`, a structured `error_code`, and all token counts set to `0`. Missing or invalid router API keys do not produce usage events because no workspace can be safely resolved.
+
 **Errors:** `401` unauthorized, `400` validation error
 
 ---

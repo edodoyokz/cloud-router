@@ -42,6 +42,7 @@
 - Dashboard route protection now uses the Next.js proxy convention with Supabase cookie auth.
 - Password reset flow (`/forgot-password` → `/auth/callback?next=/reset-password` → `/reset-password`) and Google/GitHub OAuth entry points are implemented.
 - Error explanation panels are implemented in `/dashboard` for usage-event failures/fallbacks and provider health warnings/errors using sanitized metadata only.
+- Router failure usage recording thin slice is implemented: authenticated router failures (preset-not-found, provider-not-found, unsupported provider type, invalid metadata, credential errors, invalid payload, fallback-exhausted, and non-retryable provider HTTP errors) are recorded as zero-token `failed` usage events with structured `error_code` for dashboard explanations.
 
 ## P2 — Nice to Have
 - [ ] Team workspace
