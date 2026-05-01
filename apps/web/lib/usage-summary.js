@@ -34,6 +34,7 @@ export function summarizeUsageEvents(events) {
   const promptTokens = safeEvents.reduce((sum, event) => sum + Number(event.prompt_tokens || 0), 0);
   const completionTokens = safeEvents.reduce((sum, event) => sum + Number(event.completion_tokens || 0), 0);
   const totalTokens = safeEvents.reduce((sum, event) => sum + Number(event.total_tokens || 0), 0);
+  const estimatedCostUsd = safeEvents.reduce((sum, event) => sum + Number(event.estimated_cost_usd || 0), 0);
   const failedCount = safeEvents.filter((event) => event.status === 'failed').length;
   const fallbackCount = safeEvents.filter((event) => event.status === 'fallback').length;
   const successRate = totalRequests === 0 ? 0 : (totalRequests - failedCount) / totalRequests;
@@ -46,6 +47,6 @@ export function summarizeUsageEvents(events) {
     success_rate: successRate,
     fallback_count: fallbackCount,
     failed_count: failedCount,
-    estimated_cost_usd: 0
+    estimated_cost_usd: estimatedCostUsd
   };
 }
