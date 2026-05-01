@@ -31,6 +31,8 @@ export function clampUsageLimit(limit) {
 export function summarizeUsageEvents(events) {
   const safeEvents = Array.isArray(events) ? events : [];
   const totalRequests = safeEvents.length;
+  const promptTokens = safeEvents.reduce((sum, event) => sum + Number(event.prompt_tokens || 0), 0);
+  const completionTokens = safeEvents.reduce((sum, event) => sum + Number(event.completion_tokens || 0), 0);
   const totalTokens = safeEvents.reduce((sum, event) => sum + Number(event.total_tokens || 0), 0);
   const failedCount = safeEvents.filter((event) => event.status === 'failed').length;
   const fallbackCount = safeEvents.filter((event) => event.status === 'fallback').length;
@@ -38,6 +40,8 @@ export function summarizeUsageEvents(events) {
 
   return {
     total_requests: totalRequests,
+    prompt_tokens: promptTokens,
+    completion_tokens: completionTokens,
     total_tokens: totalTokens,
     success_rate: successRate,
     fallback_count: fallbackCount,

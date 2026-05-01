@@ -13,7 +13,7 @@ export async function GET(request) {
 
     const events = await supabaseSelect(
       'usage_events',
-      `?workspace_id=eq.${encodeURIComponent(workspaceId)}&created_at=gte.${encodeURIComponent(since)}&select=id,provider_connection_id,api_key_id,request_id,model_requested,model_resolved,total_tokens,status,error_code,created_at&order=created_at.desc&limit=${limit}`
+      `?workspace_id=eq.${encodeURIComponent(workspaceId)}&created_at=gte.${encodeURIComponent(since)}&select=id,provider_connection_id,api_key_id,request_id,model_requested,model_resolved,prompt_tokens,completion_tokens,total_tokens,status,error_code,created_at&order=created_at.desc&limit=${limit}`
     );
 
     return NextResponse.json({
