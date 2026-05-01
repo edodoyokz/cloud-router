@@ -16,3 +16,10 @@ func TestHealth(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 }
+
+func TestNewWithDefaults(t *testing.T) {
+	s := New()
+	if s.Handler() == nil {
+		t.Fatalf("expected handler")
+	}
+}

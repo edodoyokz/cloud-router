@@ -10,7 +10,7 @@ import (
 
 func main() {
 	cfg := config.Load()
-	server := httpserver.New()
+	server := httpserver.NewWithOptions(httpserver.Options{Config: cfg})
 
 	addr := ":" + cfg.Port
 	log.Printf("router listening on %s", addr)
