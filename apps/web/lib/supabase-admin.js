@@ -43,6 +43,15 @@ export async function supabasePatch(table, query, patch) {
   return parseSupabaseResponse(response);
 }
 
+export async function supabaseDelete(table, query) {
+  const { url, serviceKey } = getSupabaseAdminConfig();
+  const response = await fetch(`${url}/rest/v1/${table}${query}`, {
+    method: 'DELETE',
+    headers: jsonHeaders(serviceKey)
+  });
+  return parseSupabaseResponse(response);
+}
+
 async function parseSupabaseResponse(response) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
