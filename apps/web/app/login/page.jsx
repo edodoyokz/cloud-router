@@ -25,6 +25,7 @@ function AuthPage({ title, subtitle, mode, alternateHref, alternateText, nextPat
           <AuthForm mode={mode} nextPath={nextPath} />
         </section>
         <Link href={alternateHref}>{alternateText}</Link>
+        <Link href="/forgot-password">Forgot your password?</Link>
       </div>
     </main>
   );
