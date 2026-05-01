@@ -78,6 +78,13 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [managementStatus, setManagementStatus] = useState(null);
   const [loadingResources, setLoadingResources] = useState(false);
   const [pendingActionId, setPendingActionId] = useState(null);
+  const [reconnectProviderId, setReconnectProviderId] = useState(null);
+  const [reconnectForm, setReconnectForm] = useState({
+    display_name: '',
+    base_url: '',
+    default_model: '',
+    api_key: ''
+  });
   const [usagePeriod, setUsagePeriod] = useState('today');
   const [usage, setUsage] = useState(null);
   const [usageStatus, setUsageStatus] = useState(null);
@@ -98,6 +105,26 @@ export default function DashboardClient({ routerBaseUrl }) {
 
   function updateProviderField(field, value) {
     setProviderForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function startReconnect(provider) {
+    setReconnectProviderId(provider.id);
+    setReconnectForm({
+      display_name: provider.display_name || '',
+      base_url: provider.metadata?.base_url || '',
+      default_model: provider.metadata?.default_model || '',
+      api_key: ''
+    });
+    setManagementStatus(null);
+  }
+
+  function cancelReconnect() {
+    setReconnectProviderId(null);
+    setReconnectForm({ display_name: '', base_url: '', default_model: '', api_key: '' });
+  }
+
+  function updateReconnectField(field, value) {
+    setReconnectForm((current) => ({ ...current, [field]: value }));
   }
 
   const authenticatedJsonHeaders = useCallback(async function authenticatedJsonHeaders() {
@@ -473,6 +500,27 @@ export default function DashboardClient({ routerBaseUrl }) {
     }
   }
 
+  async function reconnectProvider(providerId) {
+    setPendingActionId(`provider-reconnect:${providerId}`);
+    setManagementStatus(null);
+    try {
+      const response = await fetch(`/api/providers/${providerId}`, {
+        method: 'PATCH',
+        headers: await authenticatedJsonHeaders(),
+        body: JSON.stringify(reconnectForm)
+      });
+      await parseJsonResponse(response, 'Failed to reconnect provider');
+      setManagementStatus({ type: 'success', message: 'Provider reconnected. Run health check to verify.' });
+      cancelReconnect();
+      await loadResources();
+      await loadPreset();
+    } catch (error) {
+      setManagementStatus({ type: 'error', message: error.message || 'Failed to reconnect provider' });
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
   async function revokeApiKey(keyId) {
     setPendingActionId(`key:${keyId}`);
     setManagementStatus(null);
@@ -616,14 +664,73 @@ export default function DashboardClient({ routerBaseUrl }) {
               <span>Last checked: {formatDate(provider.last_checked_at)}</span>
               {provider.quota_state?.last_error_message ? <span>Last error: {provider.quota_state.last_error_message}</span> : null}
               <span>Created: {formatDate(provider.created_at)}</span>
-              {provider.status !== 'disconnected' ? (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button style={buttonStyle} disabled={pendingActionId === `provider-check:${provider.id}`} onClick={() => checkProviderHealth(provider.id)} type="button">
-                    {pendingActionId === `provider-check:${provider.id}` ? 'Checking…' : 'Check health'}
-                  </button>
-                  <button style={buttonStyle} disabled={pendingActionId === `provider:${provider.id}`} onClick={() => disconnectProvider(provider.id)} type="button">
-                    {pendingActionId === `provider:${provider.id}` ? 'Disconnecting…' : 'Disconnect provider'}
-                  </button>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {provider.status !== 'disconnected' ? (
+                  <>
+                    <button style={buttonStyle} disabled={pendingActionId === `provider-check:${provider.id}`} onClick={() => checkProviderHealth(provider.id)} type="button">
+                      {pendingActionId === `provider-check:${provider.id}` ? 'Checking…' : 'Check health'}
+                    </button>
+                    <button style={buttonStyle} disabled={pendingActionId === `provider:${provider.id}`} onClick={() => disconnectProvider(provider.id)} type="button">
+                      {pendingActionId === `provider:${provider.id}` ? 'Disconnecting…' : 'Disconnect provider'}
+                    </button>
+                  </>
+                ) : null}
+                <button style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }} type="button" onClick={() => startReconnect(provider)}>
+                  Reconnect / rotate key
+                </button>
+              </div>
+              {reconnectProviderId === provider.id ? (
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 12 }}>
+                  <strong>Reconnect provider</strong>
+                  <label style={labelStyle}>
+                    Provider name
+                    <input
+                      style={inputStyle}
+                      value={reconnectForm.display_name}
+                      onChange={(event) => updateReconnectField('display_name', event.target.value)}
+                    />
+                  </label>
+                  <label style={labelStyle}>
+                    Base URL
+                    <input
+                      style={inputStyle}
+                      value={reconnectForm.base_url}
+                      onChange={(event) => updateReconnectField('base_url', event.target.value)}
+                      placeholder="https://api.example.com"
+                    />
+                  </label>
+                  <label style={labelStyle}>
+                    Default model
+                    <input
+                      style={inputStyle}
+                      value={reconnectForm.default_model}
+                      onChange={(event) => updateReconnectField('default_model', event.target.value)}
+                      placeholder="gpt-4o-mini"
+                    />
+                  </label>
+                  <label style={labelStyle}>
+                    New provider API key
+                    <input
+                      style={inputStyle}
+                      type="password"
+                      value={reconnectForm.api_key}
+                      onChange={(event) => updateReconnectField('api_key', event.target.value)}
+                      placeholder="sk-..."
+                    />
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      style={buttonStyle}
+                      type="button"
+                      onClick={() => reconnectProvider(provider.id)}
+                      disabled={pendingActionId === `provider-reconnect:${provider.id}`}
+                    >
+                      {pendingActionId === `provider-reconnect:${provider.id}` ? 'Saving…' : 'Save reconnect'}
+                    </button>
+                    <button style={{ ...buttonStyle, background: '#e5e7eb', color: '#111827' }} type="button" onClick={cancelReconnect}>
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
