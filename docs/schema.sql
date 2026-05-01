@@ -123,6 +123,26 @@ create table if not exists usage_events (
 create index if not exists idx_usage_events_workspace_created
   on usage_events (workspace_id, created_at desc);
 
+-- model pricing rules
+create table if not exists model_pricing_rules (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid not null references workspaces(id) on delete cascade,
+  provider_connection_id uuid references provider_connections(id) on delete cascade,
+  model_pattern text not null,
+  input_usd_per_1m_tokens numeric not null default 0,
+  output_usd_per_1m_tokens numeric not null default 0,
+  currency text not null default 'USD',
+  status text not null default 'active' check (status in ('active', 'disabled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_model_pricing_rules_workspace_status
+  on model_pricing_rules (workspace_id, status);
+
+create index if not exists idx_model_pricing_rules_workspace_provider_model
+  on model_pricing_rules (workspace_id, provider_connection_id, model_pattern);
+
 -- request logs
 create table if not exists request_logs (
   id uuid primary key default gen_random_uuid(),
@@ -182,4 +202,9 @@ for each row execute function set_updated_at();
 drop trigger if exists trg_routing_presets_updated_at on routing_presets;
 create trigger trg_routing_presets_updated_at
 before update on routing_presets
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_model_pricing_rules_updated_at on model_pricing_rules;
+create trigger trg_model_pricing_rules_updated_at
+before update on model_pricing_rules
 for each row execute function set_updated_at();

@@ -130,7 +130,23 @@ Log usage dasar untuk dashboard.
 | error_code | text nullable | kalau gagal |
 | created_at | timestamptz | default now() |
 
-### 9. request_logs
+### 9. model_pricing_rules
+Manual workspace pricing rules used for cost estimation.
+
+| column | type | notes |
+|---|---|---|
+| id | uuid PK | generated server-side |
+| workspace_id | uuid FK workspaces.id | owner workspace |
+| provider_connection_id | uuid FK provider_connections.id nullable | optional provider-specific rule; null means workspace-wide |
+| model_pattern | text | exact model match for MVP |
+| input_usd_per_1m_tokens | numeric | prompt/input price per 1M tokens |
+| output_usd_per_1m_tokens | numeric | completion/output price per 1M tokens |
+| currency | text | USD for MVP |
+| status | text | active, disabled |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+
+### 10. request_logs
 Log teknis untuk debugging, bisa dimatikan di production.
 
 | column | type | notes |
@@ -146,7 +162,7 @@ Log teknis untuk debugging, bisa dimatikan di production.
 | status_code | integer nullable | HTTP status |
 | created_at | timestamptz | default now() |
 
-### 10. audit_events
+### 11. audit_events
 Perubahan penting untuk keamanan dan support.
 
 | column | type | notes |
@@ -180,6 +196,8 @@ Recommended indexes:
 - `routing_preset_steps(preset_id, order_index)`
 - `api_keys(workspace_id, revoked_at)`
 - `usage_events(workspace_id, created_at desc)`
+- `model_pricing_rules(workspace_id, status)`
+- `model_pricing_rules(workspace_id, provider_connection_id, model_pattern)`
 - `request_logs(workspace_id, created_at desc)`
 - `audit_events(workspace_id, created_at desc)`
 
