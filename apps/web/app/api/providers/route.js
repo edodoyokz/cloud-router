@@ -4,6 +4,21 @@ import { encryptCredential } from '../../../lib/crypto.js';
 import { supabaseInsert, supabaseSelect } from '../../../lib/supabase-admin.js';
 import { resolveWorkspaceId } from '../../../lib/workspace.js';
 
+export async function GET(request) {
+  try {
+    const workspaceId = await resolveWorkspaceId(request);
+    const providers = await supabaseSelect(
+      'provider_connections',
+      `?workspace_id=eq.${encodeURIComponent(workspaceId)}&select=id,provider_type,display_name,auth_method,status,metadata,created_at&order=created_at.desc`
+    );
+    return NextResponse.json(providers);
+  } catch (error) {
+    const status = error.status || 400;
+    const code = error.code || (status >= 500 ? 'persistence_error' : 'validation_error');
+    return NextResponse.json({ error: { code, message: error.message } }, { status });
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
