@@ -38,6 +38,7 @@ Notes:
 - Dashboard can run provider health checks and display provider health state
 - Dashboard can edit the default fallback chain used by the router
 - Dashboard can reconnect providers and rotate provider API keys
+- Dashboard can tag providers as primary, backup, free, or cheap routing hints
 - Dashboard can configure manual pricing rules and estimate usage cost
 - Dashboard shows onboarding snippets for Claude Code, Codex, OpenClaw, Cursor, env, and cURL
 - Supabase-backed provider/API key persistence
@@ -48,7 +49,7 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add provider tags for primary/backup/free/cheap routing hints
-2. Add better onboarding wizard with persisted checklist
-3. Add password reset and OAuth provider login polish
-4. Migrate Next.js middleware file convention to proxy
+1. Add better onboarding wizard with persisted checklist
+2. Add password reset and OAuth provider login polish
+3. Migrate Next.js middleware file convention to proxy
+4. Add tag-based routing policy suggestions

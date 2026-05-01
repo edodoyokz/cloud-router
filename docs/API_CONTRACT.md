@@ -79,7 +79,8 @@ Creates a new provider connection.
   "auth_method": "api_key",
   "base_url": "https://api.example.com",
   "api_key": "sk-xxxxxxxxxxxx",
-  "default_model": "gpt-4o-mini"
+  "default_model": "gpt-4o-mini",
+  "tags": ["primary", "cheap"]
 }
 ```
 
@@ -95,7 +96,8 @@ Creates a new provider connection.
   "status": "active",
   "metadata": {
     "base_url": "https://api.example.com",
-    "default_model": "gpt-4o-mini"
+    "default_model": "gpt-4o-mini",
+    "tags": ["primary", "cheap"]
   },
   "created_at": "2026-01-01T00:00:00Z"
 }
@@ -130,7 +132,8 @@ Reconnects or rotates an existing OpenAI-compatible API-key provider.
   "status": "active",
   "metadata": {
     "base_url": "https://api.openai.com",
-    "default_model": "gpt-4o-mini"
+    "default_model": "gpt-4o-mini",
+    "tags": ["primary", "cheap"]
   },
   "quota_state": {},
   "last_checked_at": null,
@@ -138,7 +141,42 @@ Reconnects or rotates an existing OpenAI-compatible API-key provider.
 }
 ```
 
-The response never includes `credential_encrypted` or raw credential material. Health check remains manual after reconnect.
+The response never includes `credential_encrypted` or raw credential material. Health check remains manual after reconnect. If `tags` is omitted during reconnect, existing provider tags are preserved.
+
+**Errors:** `401` unauthorized, `404` not found, `400` validation error
+
+---
+
+### `PATCH /api/providers/:id/tags`
+Updates provider routing hint tags.
+
+Allowed tags: `primary`, `backup`, `free`, `cheap`. Unknown tags are ignored during normalization.
+
+**Request**
+```json
+{ "tags": ["backup", "free"] }
+```
+
+**Response `200`**
+```json
+{
+  "id": "uuid",
+  "provider_type": "openai_compatible",
+  "display_name": "Backup provider",
+  "auth_method": "api_key",
+  "status": "active",
+  "metadata": {
+    "base_url": "https://api.example.com",
+    "default_model": "gpt-4o-mini",
+    "tags": ["backup", "free"]
+  },
+  "quota_state": {},
+  "last_checked_at": null,
+  "created_at": "2026-05-01T00:00:00Z"
+}
+```
+
+The response never includes `credential_encrypted` or raw credential material. Tags are routing hints only; router behavior is unchanged in this MVP slice.
 
 **Errors:** `401` unauthorized, `404` not found, `400` validation error
 

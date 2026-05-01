@@ -20,7 +20,7 @@
 - [x] Usage charts and provider breakdowns
 - [ ] Error explanation panel
 - [x] Reconnect flow
-- [ ] Provider tags: primary / backup / free / cheap
+- [x] Provider tags: primary / backup / free / cheap
 - [x] Pricing/cost estimation configuration
 
 ## Notes
@@ -34,6 +34,7 @@
 - Pricing/cost estimation thin slice is implemented with manual workspace pricing rules.
 - Onboarding snippets thin slice is implemented in `/dashboard` Endpoint config.
 - SSR/cookie auth hardening thin slice is implemented with `/dashboard` middleware and bearer-or-cookie API auth resolution.
+- Provider tag routing hints are implemented in `/dashboard` and stored in provider metadata; router policy remains manual for MVP.
 
 ## P2 — Nice to Have
 - [ ] Team workspace

@@ -60,13 +60,15 @@ Koneksi akun/provider milik user.
 | auth_method | text | oauth, api_key, token, cookie |
 | provider_family | text | provider family, default `openai_compatible` |
 | capabilities | jsonb | capability metadata, default `{}` |
-| metadata | jsonb | provider metadata seperti `base_url` dan `default_model` |
+| metadata | jsonb | provider metadata seperti `base_url`, `default_model`, dan routing hint `tags` |
 | credential_encrypted | text | encrypted provider API key payload (never returned in API responses) |
 | status | text | active, expired, error, disconnected |
 | quota_state | jsonb | cached quota / limit info |
 | last_checked_at | timestamptz nullable | health check terakhir |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
+
+Provider routing hint tags are stored in `metadata.tags` as an array of fixed values: `primary`, `backup`, `free`, `cheap`. No separate tag table is required for MVP.
 
 ### 5. routing_presets
 Preset routing yang dipilih user.
