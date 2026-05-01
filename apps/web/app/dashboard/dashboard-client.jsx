@@ -99,6 +99,16 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [workspaceContext, setWorkspaceContext] = useState(null);
   const [workspaceStatus, setWorkspaceStatus] = useState(null);
   const [loadingWorkspace, setLoadingWorkspace] = useState(false);
+  const [pricingRules, setPricingRules] = useState([]);
+  const [loadingPricingRules, setLoadingPricingRules] = useState(false);
+  const [pricingPending, setPricingPending] = useState(false);
+  const [pricingStatus, setPricingStatus] = useState(null);
+  const [pricingForm, setPricingForm] = useState({
+    provider_connection_id: '',
+    model_pattern: '',
+    input_usd_per_1m_tokens: '',
+    output_usd_per_1m_tokens: ''
+  });
 
   const envSnippet = buildEnvSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
   const curlSnippet = buildCurlSnippet({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
@@ -243,6 +253,23 @@ export default function DashboardClient({ routerBaseUrl }) {
     };
   }, [authenticatedJsonHeaders]);
 
+  const loadPricingRules = useCallback(async function loadPricingRules() {
+    setLoadingPricingRules(true);
+    setPricingStatus(null);
+    try {
+      const response = await fetch('/api/pricing/rules', {
+        headers: await authenticatedJsonHeaders(),
+        cache: 'no-store'
+      });
+      const data = await parseJsonResponse(response, 'Failed to load pricing rules');
+      setPricingRules(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setPricingStatus({ type: 'error', message: error.message || 'Failed to load pricing rules' });
+    } finally {
+      setLoadingPricingRules(false);
+    }
+  }, [authenticatedJsonHeaders]);
+
   const loadUsage = useCallback(async function loadUsage(period = usagePeriod) {
     setLoadingUsage(true);
     setUsageStatus(null);
@@ -258,6 +285,37 @@ export default function DashboardClient({ routerBaseUrl }) {
       setLoadingUsage(false);
     }
   }, [authenticatedJsonHeaders, usagePeriod]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialPricingRules() {
+      try {
+        const headers = await authenticatedJsonHeaders();
+        if (cancelled) return;
+        setLoadingPricingRules(true);
+        setPricingStatus(null);
+
+        const response = await fetch('/api/pricing/rules', {
+          headers,
+          cache: 'no-store'
+        });
+        const data = await parseJsonResponse(response, 'Failed to load pricing rules');
+        if (cancelled) return;
+        setPricingRules(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!cancelled) setPricingStatus({ type: 'error', message: error.message || 'Failed to load pricing rules' });
+      } finally {
+        if (!cancelled) setLoadingPricingRules(false);
+      }
+    }
+
+    loadInitialPricingRules();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedJsonHeaders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -402,6 +460,55 @@ export default function DashboardClient({ routerBaseUrl }) {
 
   function selectUsagePeriod(period) {
     setUsagePeriod(period);
+  }
+
+  function updatePricingField(field, value) {
+    setPricingForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function createPricingRule(event) {
+    event.preventDefault();
+    setPricingPending(true);
+    setPricingStatus(null);
+    try {
+      const payload = {
+        ...pricingForm,
+        provider_connection_id: pricingForm.provider_connection_id || null
+      };
+      const response = await fetch('/api/pricing/rules', {
+        method: 'POST',
+        headers: await authenticatedJsonHeaders(),
+        body: JSON.stringify(payload)
+      });
+      await parseJsonResponse(response, 'Failed to create pricing rule');
+      setPricingForm({ provider_connection_id: '', model_pattern: '', input_usd_per_1m_tokens: '', output_usd_per_1m_tokens: '' });
+      setPricingStatus({ type: 'success', message: 'Pricing rule added.' });
+      await loadPricingRules();
+      await loadUsage(usagePeriod);
+    } catch (error) {
+      setPricingStatus({ type: 'error', message: error.message || 'Failed to create pricing rule' });
+    } finally {
+      setPricingPending(false);
+    }
+  }
+
+  async function disablePricingRule(ruleId) {
+    setPendingActionId(`pricing:${ruleId}`);
+    setPricingStatus(null);
+    try {
+      const response = await fetch(`/api/pricing/rules/${ruleId}`, {
+        method: 'DELETE',
+        headers: await authenticatedJsonHeaders()
+      });
+      await parseJsonResponse(response, 'Failed to disable pricing rule');
+      setPricingStatus({ type: 'success', message: 'Pricing rule disabled.' });
+      await loadPricingRules();
+      await loadUsage(usagePeriod);
+    } catch (error) {
+      setPricingStatus({ type: 'error', message: error.message || 'Failed to disable pricing rule' });
+    } finally {
+      setPendingActionId(null);
+    }
   }
 
   async function signOut() {
@@ -621,6 +728,7 @@ export default function DashboardClient({ routerBaseUrl }) {
           <StatCard label="Total tokens" value={formatNumber(usage?.summary?.total_tokens)} />
           <StatCard label="Prompt tokens" value={formatNumber(usage?.summary?.prompt_tokens)} />
           <StatCard label="Completion tokens" value={formatNumber(usage?.summary?.completion_tokens)} />
+          <StatCard label="Estimated cost" value={formatUsd(usage?.summary?.estimated_cost_usd)} />
           <StatCard label="Success rate" value={formatPercent(usage?.summary?.success_rate)} />
           <StatCard label="Fallbacks" value={formatNumber(usage?.summary?.fallback_count)} />
           <StatCard label="Failures" value={formatNumber(usage?.summary?.failed_count)} />
@@ -638,10 +746,60 @@ export default function DashboardClient({ routerBaseUrl }) {
                 <span>Resolved: {event.model_resolved || '—'}</span>
                 <span>Tokens: {formatNumber(event.total_tokens)} total / {formatNumber(event.prompt_tokens)} prompt / {formatNumber(event.completion_tokens)} completion</span>
                 <span>Error: {event.error_code || '—'}</span>
+                <span>Cost: {event.pricing_rule_missing ? 'not configured' : formatUsd(event.estimated_cost_usd)}</span>
                 <span>Created: {formatDate(event.created_at)}</span>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section style={cardStyle}>
+        <div>
+          <h2 style={{ margin: 0 }}>Pricing rules</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Estimate cost from prompt/completion tokens. Prices are USD per 1M tokens.</p>
+        </div>
+        {pricingStatus ? <StatusMessage status={pricingStatus} /> : null}
+        <form onSubmit={createPricingRule} style={{ display: 'grid', gap: 14 }}>
+          <label style={labelStyle}>
+            Provider optional
+            <select style={inputStyle} value={pricingForm.provider_connection_id} onChange={(event) => updatePricingField('provider_connection_id', event.target.value)}>
+              <option value="">Workspace-wide / any provider</option>
+              {providers.map((provider) => (
+                <option key={provider.id} value={provider.id}>{provider.display_name} — {provider.status}</option>
+              ))}
+            </select>
+          </label>
+          <label style={labelStyle}>
+            Model pattern exact match
+            <input style={inputStyle} value={pricingForm.model_pattern} onChange={(event) => updatePricingField('model_pattern', event.target.value)} placeholder="gpt-4o-mini" />
+          </label>
+          <label style={labelStyle}>
+            Input USD / 1M tokens
+            <input style={inputStyle} type="number" min="0" step="0.000001" value={pricingForm.input_usd_per_1m_tokens} onChange={(event) => updatePricingField('input_usd_per_1m_tokens', event.target.value)} />
+          </label>
+          <label style={labelStyle}>
+            Output USD / 1M tokens
+            <input style={inputStyle} type="number" min="0" step="0.000001" value={pricingForm.output_usd_per_1m_tokens} onChange={(event) => updatePricingField('output_usd_per_1m_tokens', event.target.value)} />
+          </label>
+          <button style={buttonStyle} disabled={pricingPending} type="submit">{pricingPending ? 'Adding…' : 'Add pricing rule'}</button>
+        </form>
+
+        {loadingPricingRules ? <p>Loading pricing rules…</p> : null}
+        {pricingRules.length === 0 && !loadingPricingRules ? <p style={{ color: '#4b5563' }}>No pricing rules yet. Usage cost will show as not configured.</p> : null}
+        <div style={{ display: 'grid', gap: 12 }}>
+          {pricingRules.map((rule) => (
+            <div key={rule.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 8 }}>
+              <strong>{rule.model_pattern}</strong>
+              <span>Scope: {providerNameForId(providers, rule.provider_connection_id)}</span>
+              <span>Input: ${formatPrice(rule.input_usd_per_1m_tokens)} / 1M tokens</span>
+              <span>Output: ${formatPrice(rule.output_usd_per_1m_tokens)} / 1M tokens</span>
+              <span>Created: {formatDate(rule.created_at)}</span>
+              <button style={buttonStyle} disabled={pendingActionId === `pricing:${rule.id}`} onClick={() => disablePricingRule(rule.id)} type="button">
+                {pendingActionId === `pricing:${rule.id}` ? 'Disabling…' : 'Disable rule'}
+              </button>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -908,6 +1066,21 @@ function formatNumber(value) {
 function formatDate(value) {
   if (!value) return 'Never';
   return new Date(value).toLocaleString();
+}
+
+function providerNameForId(providers, providerId) {
+  if (!providerId) return 'Workspace-wide / any provider';
+  const provider = providers.find((item) => item.id === providerId);
+  return provider ? provider.display_name : providerId;
+}
+
+function formatPrice(value) {
+  return Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 6 });
+}
+
+function formatUsd(value) {
+  const amount = Number(value || 0);
+  return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 6, maximumFractionDigits: 6 })}`;
 }
 
 async function parseJsonResponse(response, fallbackMessage) {
