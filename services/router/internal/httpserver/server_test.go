@@ -63,6 +63,9 @@ func TestChatCompletionsRejectsInvalidAPIKey(t *testing.T) {
 	if !strings.Contains(w.Body.String(), "invalid_api_key") {
 		t.Fatalf("expected invalid_api_key, got %s", w.Body.String())
 	}
+	if len(repo.UsageEvents) != 0 {
+		t.Fatalf("expected invalid api key not to record usage events, got %+v", repo.UsageEvents)
+	}
 }
 
 func TestChatCompletionsNoPreset(t *testing.T) {
@@ -81,6 +84,15 @@ func TestChatCompletionsNoPreset(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "preset_not_found") {
 		t.Fatalf("expected preset_not_found, got %s", w.Body.String())
+	}
+	if len(repo.UsageEvents) != 1 {
+		t.Fatalf("expected one failed usage event, got %d", len(repo.UsageEvents))
+	}
+	if repo.UsageEvents[0].Status != "failed" || repo.UsageEvents[0].ErrorCode != "preset_not_found" {
+		t.Fatalf("expected failed preset_not_found usage event, got %+v", repo.UsageEvents[0])
+	}
+	if repo.UsageEvents[0].WorkspaceID != "ws_1" || repo.UsageEvents[0].APIKeyID != "k1" {
+		t.Fatalf("expected workspace and api key on usage event, got %+v", repo.UsageEvents[0])
 	}
 }
 
@@ -281,6 +293,49 @@ func TestChatCompletionsFallsBackOnTransportError(t *testing.T) {
 	}
 }
 
+func TestChatCompletionsRecordsNonRetryableProviderFailure(t *testing.T) {
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":{"message":"bad request"}}`))
+	}))
+	defer provider.Close()
+
+	keyHex := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	cred, _ := security.EncryptCredential(keyHex, []byte(`{"api_key":"sk-provider"}`))
+	repo := store.NewMemoryRepository()
+	repo.APIKeys = []store.APIKeyRecord{{ID: "k1", WorkspaceID: "ws_1", KeyHash: "ec29b6f64e70ff4307ff0e5228e44f43258d3d8dd41a5f6c47519b4ac4f930e7"}}
+	repo.Steps = []store.PresetStep{{ProviderConnectionID: "p1", ProviderType: "openai_compatible", OrderIndex: 1}}
+	repo.Providers = []store.ProviderConnection{{
+		ID:                  "p1",
+		WorkspaceID:         "ws_1",
+		ProviderType:        "openai_compatible",
+		CredentialEncrypted: cred,
+		Metadata:            map[string]any{"base_url": provider.URL, "default_model": "gpt-test-default"},
+	}}
+	cfg := config.Load()
+	cfg.EncryptionKey = keyHex
+	s := NewWithOptions(Options{Repo: repo, Config: cfg, Client: http.DefaultClient})
+
+	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"auto","messages":[{"role":"user","content":"hi"}]}`))
+	req.Header.Set("Authorization", "Bearer nnr_test_123")
+	w := httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != 400 {
+		t.Fatalf("expected provider status 400, got %d body=%s", w.Code, w.Body.String())
+	}
+	if len(repo.UsageEvents) != 1 {
+		t.Fatalf("expected one failed usage event, got %d", len(repo.UsageEvents))
+	}
+	event := repo.UsageEvents[0]
+	if event.Status != "failed" || event.ErrorCode != "provider_request_failed" {
+		t.Fatalf("expected failed provider_request_failed event, got %+v", event)
+	}
+	if event.ProviderConnectionID != "p1" || event.ModelResolved != "gpt-test-default" {
+		t.Fatalf("expected provider and resolved model on event, got %+v", event)
+	}
+}
+
 func TestChatCompletionsFallbackExhausted(t *testing.T) {
 	providerA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
@@ -318,5 +373,17 @@ func TestChatCompletionsFallbackExhausted(t *testing.T) {
 	}
 	if !strings.Contains(w.Body.String(), "fallback_exhausted") {
 		t.Fatalf("expected fallback_exhausted, got %s", w.Body.String())
+	}
+	if len(repo.UsageEvents) != 1 {
+		t.Fatalf("expected one failed usage event, got %d", len(repo.UsageEvents))
+	}
+	if repo.UsageEvents[0].Status != "failed" || repo.UsageEvents[0].ErrorCode != "fallback_exhausted" {
+		t.Fatalf("expected failed fallback_exhausted usage event, got %+v", repo.UsageEvents[0])
+	}
+	if repo.UsageEvents[0].ProviderConnectionID != "p2" {
+		t.Fatalf("expected final attempted provider p2, got %+v", repo.UsageEvents[0])
+	}
+	if repo.UsageEvents[0].PromptTokens != 0 || repo.UsageEvents[0].CompletionTokens != 0 || repo.UsageEvents[0].TotalTokens != 0 {
+		t.Fatalf("expected zero tokens for failed event, got %+v", repo.UsageEvents[0])
 	}
 }

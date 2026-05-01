@@ -91,6 +91,8 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	modelRequested := req.Model
+
 	rawKey := bearerToken(r.Header.Get("Authorization"))
 	if rawKey == "" {
 		writeError(w, http.StatusUnauthorized, contracts.ErrorInvalidAPIKey, "invalid api key")
@@ -104,6 +106,11 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 	steps, err := s.repo.DefaultPresetSteps(r.Context(), apiKey.WorkspaceID)
 	if err != nil || len(steps) == 0 {
+		s.recordFailureUsage(r, apiKey, store.UsageEvent{
+			RequestID:      "req_1",
+			ModelRequested: modelRequested,
+			ErrorCode:      contracts.ErrorPresetNotFound,
+		})
 		writeError(w, http.StatusNotFound, contracts.ErrorPresetNotFound, "default preset not found")
 		return
 	}
@@ -116,35 +123,78 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		maxAttempts = len(steps)
 	}
 
+	lastFailureEvent := store.UsageEvent{
+		RequestID:      "req_1",
+		ModelRequested: modelRequested,
+		ErrorCode:      contracts.ErrorFallbackExhausted,
+	}
+
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		step := steps[attempt]
+		lastFailureEvent.ProviderConnectionID = step.ProviderConnectionID
 		provider, ok, err := s.repo.ProviderConnection(r.Context(), apiKey.WorkspaceID, step.ProviderConnectionID)
 		if err != nil || !ok {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: step.ProviderConnectionID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderNotFound,
+			})
 			writeError(w, http.StatusNotFound, contracts.ErrorProviderNotFound, "provider not found")
 			return
 		}
 		if provider.ProviderType != "openai_compatible" {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderRequestFailed,
+			})
 			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "unsupported provider type")
 			return
 		}
 		baseURL, _ := provider.Metadata["base_url"].(string)
 		defaultModel, _ := provider.Metadata["default_model"].(string)
 		if baseURL == "" || defaultModel == "" {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderRequestFailed,
+			})
 			writeError(w, http.StatusBadGateway, contracts.ErrorProviderRequestFailed, "provider metadata invalid")
 			return
 		}
 		decrypted, err := security.DecryptCredential(s.cfg.EncryptionKey, provider.CredentialEncrypted)
 		if err != nil {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderCredentialMissing,
+			})
 			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider credential missing")
 			return
 		}
 		var cred map[string]any
 		if err := json.Unmarshal(decrypted, &cred); err != nil {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderCredentialMissing,
+			})
 			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider credential invalid")
 			return
 		}
 		providerAPIKey, _ := cred["api_key"].(string)
 		if providerAPIKey == "" {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       modelRequested,
+				ErrorCode:            contracts.ErrorProviderCredentialMissing,
+			})
 			writeError(w, http.StatusBadGateway, contracts.ErrorProviderCredentialMissing, "provider api key missing")
 			return
 		}
@@ -159,8 +209,18 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			body["model"] = defaultModel
 		}
 		resolvedModel, _ := body["model"].(string)
+		lastFailureEvent.ProviderConnectionID = provider.ID
+		lastFailureEvent.ModelRequested = requestedModel
+		lastFailureEvent.ModelResolved = resolvedModel
 		payload, err := json.Marshal(body)
 		if err != nil {
+			s.recordFailureUsage(r, apiKey, store.UsageEvent{
+				ProviderConnectionID: provider.ID,
+				RequestID:            "req_1",
+				ModelRequested:       requestedModel,
+				ModelResolved:        resolvedModel,
+				ErrorCode:            contracts.ErrorInvalidRequest,
+			})
 			writeError(w, http.StatusBadRequest, contracts.ErrorInvalidRequest, "invalid request payload")
 			return
 		}
@@ -171,6 +231,7 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			if attempt < maxAttempts-1 {
 				continue
 			}
+			s.recordFailureUsage(r, apiKey, lastFailureEvent)
 			writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
 			return
 		}
@@ -202,19 +263,37 @@ func (s *Server) handleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		if retryableStatus(resp.StatusCode) {
 			continue
 		}
+		s.recordFailureUsage(r, apiKey, store.UsageEvent{
+			ProviderConnectionID: provider.ID,
+			RequestID:            "req_1",
+			ModelRequested:       requestedModel,
+			ModelResolved:        resolvedModel,
+			ErrorCode:            contracts.ErrorProviderRequestFailed,
+		})
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		_, _ = w.Write(resp.Body)
 		return
 	}
 
-	writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
+		writeError(w, http.StatusBadGateway, contracts.ErrorFallbackExhausted, "all fallback providers exhausted")
+	s.recordFailureUsage(r, apiKey, lastFailureEvent)
 }
 
 type responseUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
+}
+
+func (s *Server) recordFailureUsage(r *http.Request, apiKey store.APIKeyRecord, event store.UsageEvent) {
+	event.WorkspaceID = apiKey.WorkspaceID
+	event.APIKeyID = apiKey.ID
+	event.Status = "failed"
+	event.PromptTokens = 0
+	event.CompletionTokens = 0
+	event.TotalTokens = 0
+	_ = s.repo.RecordUsage(r.Context(), event)
 }
 
 func extractTokenUsage(body []byte) responseUsage {
