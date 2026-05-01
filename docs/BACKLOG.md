@@ -17,7 +17,7 @@
 - [x] Production SSR/cookie auth hardening
 - [x] Copy config snippets for Claude Code / Codex / OpenClaw / Cursor
 - [ ] Better onboarding wizard
-- [ ] Usage charts
+- [x] Usage charts and provider breakdowns
 - [ ] Error explanation panel
 - [x] Reconnect flow
 - [ ] Provider tags: primary / backup / free / cheap

@@ -432,7 +432,7 @@ Soft-disables a pricing rule.
 ---
 
 ### `GET /api/usage`
-Returns usage summary and recent events.
+Returns usage summary, analytics charts/breakdowns, and recent events.
 
 **Query Parameters**
 - `period` — `today`, `7d`, `30d` (default: `today`)
@@ -443,37 +443,48 @@ Returns usage summary and recent events.
 {
   "period": "7d",
   "summary": {
-    "total_requests": 12,
-    "prompt_tokens": 2560,
-    "completion_tokens": 1282,
-    "total_tokens": 3842,
-    "success_rate": 0.92,
-    "fallback_count": 1,
-    "failed_count": 1,
-    "estimated_cost_usd": 0.000135
+    "total_requests": 2,
+    "prompt_tokens": 200,
+    "completion_tokens": 100,
+    "total_tokens": 300,
+    "success_rate": 1,
+    "fallback_count": 0,
+    "failed_count": 0,
+    "estimated_cost_usd": 0.00012
   },
-  "events": [
-    {
-      "id": "uuid",
-      "provider_connection_id": "uuid",
-      "api_key_id": "uuid",
-      "request_id": "req_123",
-      "model_requested": "auto",
-      "model_resolved": "gpt-4o-mini",
-      "prompt_tokens": 300,
-      "completion_tokens": 150,
-      "total_tokens": 450,
-      "status": "success",
-      "error_code": null,
-      "estimated_cost_usd": 0.000135,
-      "pricing_rule_missing": false,
-      "created_at": "2026-01-01T12:30:00Z"
-    }
-  ]
+  "analytics": {
+    "event_count": 2,
+    "truncated": false,
+    "max_events": 5000
+  },
+  "charts": {
+    "usage_buckets": [
+      {
+        "bucket": "2026-05-01T00:00:00.000Z",
+        "label": "May 1",
+        "requests": 2,
+        "prompt_tokens": 200,
+        "completion_tokens": 100,
+        "total_tokens": 300,
+        "estimated_cost_usd": 0.00012,
+        "failed_count": 0,
+        "fallback_count": 0,
+        "success_rate": 1
+      }
+    ]
+  },
+  "breakdowns": {
+    "providers": [],
+    "models": [],
+    "statuses": []
+  },
+  "events": []
 }
 ```
 
 `estimated_cost_usd` is computed from active manual pricing rules. If no rule matches an event, that event returns `estimated_cost_usd: 0` and `pricing_rule_missing: true`.
+
+`summary`, `charts`, and `breakdowns` are computed from up to 5000 events for the selected period. `events` remains the recent list controlled by `limit` (default 50, max 100) for backward compatibility.
 
 Token fields are parsed from successful OpenAI-compatible provider responses when available. Missing provider usage is recorded as zero.
 

@@ -155,6 +155,7 @@ Notes:
 17. Open `/dashboard` without a session and confirm redirect to `/login?next=/dashboard`.
 18. Log in, confirm redirect/link can open `/dashboard`, and confirm Workspace card shows `authenticated` mode.
 19. Call same-origin APIs from the authenticated browser session without manually adding a bearer header to confirm cookie auth works.
+20. After generating traffic, open `/dashboard`, switch usage period, and confirm Usage analytics shows trend bars plus provider/model/status breakdowns.
 
 ---
 

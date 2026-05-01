@@ -34,6 +34,7 @@ Notes:
 - Minimal `/dashboard` page for provider connection and API key generation
 - Dashboard lists providers/API keys and supports disconnect/revoke actions
 - Dashboard displays usage summary, token breakdown, and recent router events
+- Dashboard shows usage charts and provider/model/status breakdowns
 - Dashboard can run provider health checks and display provider health state
 - Dashboard can edit the default fallback chain used by the router
 - Dashboard can reconnect providers and rotate provider API keys
@@ -47,7 +48,7 @@ Notes:
 - Non-streaming OpenAI-compatible chat completions
 
 ## Next Build Steps
-1. Add usage charts and provider breakdowns
-2. Add provider tags for primary/backup/free/cheap routing hints
-3. Add better onboarding wizard with persisted checklist
-4. Add password reset and OAuth provider login polish
+1. Add provider tags for primary/backup/free/cheap routing hints
+2. Add better onboarding wizard with persisted checklist
+3. Add password reset and OAuth provider login polish
+4. Migrate Next.js middleware file convention to proxy
