@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseSelect } from '../../../lib/supabase-admin.js';
 import { resolveWorkspaceId } from '../../../lib/workspace.js';
+import { enrichUsageEventsWithPricing } from '../../../lib/pricing.js';
 import { clampUsageLimit, normalizeUsagePeriod, summarizeUsageEvents, usageSinceISOString } from '../../../lib/usage-summary.js';
 
 export async function GET(request) {
@@ -16,10 +17,16 @@ export async function GET(request) {
       `?workspace_id=eq.${encodeURIComponent(workspaceId)}&created_at=gte.${encodeURIComponent(since)}&select=id,provider_connection_id,api_key_id,request_id,model_requested,model_resolved,prompt_tokens,completion_tokens,total_tokens,status,error_code,created_at&order=created_at.desc&limit=${limit}`
     );
 
+    const pricingRules = await supabaseSelect(
+      'model_pricing_rules',
+      `?workspace_id=eq.${encodeURIComponent(workspaceId)}&status=eq.active&select=id,provider_connection_id,model_pattern,input_usd_per_1m_tokens,output_usd_per_1m_tokens,currency,status`
+    );
+    const enrichedEvents = enrichUsageEventsWithPricing(events, pricingRules);
+
     return NextResponse.json({
       period,
-      summary: summarizeUsageEvents(events),
-      events
+      summary: summarizeUsageEvents(enrichedEvents),
+      events: enrichedEvents
     });
   } catch (error) {
     const status = error.status || 400;
