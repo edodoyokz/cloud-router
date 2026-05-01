@@ -10,15 +10,15 @@ type APIKeyRecord struct {
 }
 
 type ProviderConnection struct {
-	ID                  string
-	WorkspaceID         string
-	ProviderType        string
-	DisplayName         string
-	AuthMethod          string
-	ProviderFamily      string
-	CredentialEncrypted string
-	Metadata            map[string]any
-	Status              string
+	ID                  string         `json:"id"`
+	WorkspaceID         string         `json:"workspace_id"`
+	ProviderType        string         `json:"provider_type"`
+	DisplayName         string         `json:"display_name"`
+	AuthMethod          string         `json:"auth_method"`
+	ProviderFamily      string         `json:"provider_family"`
+	CredentialEncrypted string         `json:"credential_encrypted"`
+	Metadata            map[string]any `json:"metadata"`
+	Status              string         `json:"status"`
 }
 
 type PresetStep struct {
