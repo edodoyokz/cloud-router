@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildOnboardingSnippets, normalizeRouterBaseUrl } from '../../lib/endpoint-snippets.js';
 import { ALLOWED_PROVIDER_TAGS, normalizeProviderTags, providerTagLabel } from '../../lib/provider-tags.js';
+import { buildTagBasedFallbackSuggestion } from '../../lib/provider-routing-suggestions.js';
 import { getSupabaseBrowserClient } from '../../lib/supabase-browser.js';
 
 const inputStyle = {
@@ -214,6 +215,41 @@ function ProviderTagToggleGroup({ selectedTags, onToggle, disabled = false }) {
   );
 }
 
+function TagBasedSuggestionPanel({ suggestion, onApply }) {
+  const steps = Array.isArray(suggestion?.steps) ? suggestion.steps : [];
+  const excluded = Array.isArray(suggestion?.excluded) ? suggestion.excluded : [];
+
+  return (
+    <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 12, padding: 14, display: 'grid', gap: 10 }}>
+      <div>
+        <strong>Tag-based suggestion</strong>
+        <p style={{ margin: '4px 0 0', color: '#1e40af' }}>Primary providers first, then cheap/free, then backup. Applying this only changes the local draft.</p>
+      </div>
+      {steps.length === 0 ? <p style={{ margin: 0, color: '#4b5563' }}>No eligible providers for a tag-based suggestion yet.</p> : null}
+      {steps.length > 0 ? (
+        <ol style={{ margin: 0, paddingLeft: 22, display: 'grid', gap: 6 }}>
+          {steps.map((step) => (
+            <li key={step.provider_connection_id}>
+              <strong>{step.display_name}</strong> — {step.suggestion_label} · {step.health || 'unknown'}{step.status === 'error' ? ' · status error' : ''}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {excluded.length > 0 ? (
+        <details>
+          <summary>Excluded providers</summary>
+          <ul style={{ marginBottom: 0 }}>
+            {excluded.map((provider) => (
+              <li key={provider.id || provider.display_name}>{provider.display_name} — {provider.reason}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      <button style={buttonStyle} type="button" onClick={onApply} disabled={steps.length === 0}>Apply suggestion to draft</button>
+    </div>
+  );
+}
+
 export default function DashboardClient({ routerBaseUrl }) {
   const normalizedRouterBaseUrl = useMemo(() => normalizeRouterBaseUrl(routerBaseUrl), [routerBaseUrl]);
   const [providerForm, setProviderForm] = useState({
@@ -271,6 +307,7 @@ export default function DashboardClient({ routerBaseUrl }) {
   const [onboardingStatus, setOnboardingStatus] = useState(null);
 
   const onboardingSnippets = buildOnboardingSnippets({ routerBaseUrl: normalizedRouterBaseUrl, apiKey: rawApiKey });
+  const tagBasedSuggestion = useMemo(() => buildTagBasedFallbackSuggestion(providers), [providers]);
   const onboardingTargets = {
     connect_provider: 'connect-provider',
     check_provider_health: 'connected-providers',
@@ -665,6 +702,17 @@ export default function DashboardClient({ routerBaseUrl }) {
   function resetPresetDraft() {
     setPresetDraftSteps(draftStepsFromPreset(preset));
     setPresetStatus(null);
+  }
+
+  function applyTagBasedSuggestion() {
+    setPresetDraftSteps(tagBasedSuggestion.steps.map((step) => ({
+      provider_connection_id: step.provider_connection_id,
+      display_name: step.display_name,
+      status: step.status,
+      health: step.health,
+      model_alias: ''
+    })));
+    setPresetStatus({ type: 'success', message: 'Suggested chain applied to draft. Review it, then Save chain.' });
   }
 
   function addProviderToDraft() {
@@ -1324,6 +1372,8 @@ export default function DashboardClient({ routerBaseUrl }) {
           <h2 style={{ margin: 0 }}>Default fallback chain</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Router tries providers in this order for model <code>auto</code>.</p>
         </div>
+
+        <TagBasedSuggestionPanel suggestion={tagBasedSuggestion} onApply={applyTagBasedSuggestion} />
 
         {presetStatus ? <StatusMessage status={presetStatus} /> : null}
         {loadingPreset ? <p>Loading default preset…</p> : null}
