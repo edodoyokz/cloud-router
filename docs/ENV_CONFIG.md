@@ -43,7 +43,7 @@ Semua environment variables dikelompokkan per service. Buat file `.env` di root 
 
 ## Provider-Specific (di router runtime)
 
-Provider credentials disimpan encrypted di database, bukan sebagai env vars. Namun beberapa provider mungkin butuh config tambahan:
+Generic OpenAI-compatible provider API keys disimpan encrypted di database, bukan sebagai env vars. Namun beberapa provider mungkin butuh config tambahan:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|

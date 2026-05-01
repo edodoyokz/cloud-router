@@ -1,4 +1,4 @@
-# DB Schema — 9router Cloud MVP
+# DB Schema — NusaNexus Router MVP
 
 Target DB: **PostgreSQL**
 
@@ -58,9 +58,10 @@ Koneksi akun/provider milik user.
 | provider_type | text | stable provider slug, e.g. codex, kimi, minimax, zai, alibaba |
 | display_name | text | nama yang ditampilkan di UI |
 | auth_method | text | oauth, api_key, token, cookie |
-| provider_family | text | oauth, apikey, hybrid |
-| capabilities | jsonb | model, streaming, fallback, quota, tool support |
-| credential_encrypted | text | blob credential terenkripsi |
+| provider_family | text | provider family, default `openai_compatible` |
+| capabilities | jsonb | capability metadata, default `{}` |
+| metadata | jsonb | provider metadata seperti `base_url` dan `default_model` |
+| credential_encrypted | text | encrypted provider API key payload (never returned in API responses) |
 | status | text | active, expired, error, disconnected |
 | quota_state | jsonb | cached quota / limit info |
 | last_checked_at | timestamptz nullable | health check terakhir |

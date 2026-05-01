@@ -57,14 +57,16 @@ Creates a new provider connection.
 **Request Body**
 ```json
 {
-  "provider_type": "kimi",
-  "display_name": "Kimi API",
+  "provider_type": "openai_compatible",
+  "display_name": "My Provider",
   "auth_method": "api_key",
-  "credential": "sk-xxxxxxxxxxxx"
+  "base_url": "https://api.example.com",
+  "api_key": "sk-xxxxxxxxxxxx",
+  "default_model": "gpt-4o-mini"
 }
 ```
 
-> `credential` is the raw credential. Server encrypts before storing.
+> `api_key` is encrypted before storing and is never returned by the API.
 
 **Response `201`**
 ```json
