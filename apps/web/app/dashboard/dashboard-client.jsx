@@ -297,6 +297,65 @@ export default function DashboardClient({ routerBaseUrl }) {
 
       <section style={cardStyle}>
         <div>
+          <h2 style={{ margin: 0 }}>Usage</h2>
+          <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Workspace usage from router requests.</p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            ['today', 'Today'],
+            ['7d', '7 days'],
+            ['30d', '30 days']
+          ].map(([period, label]) => (
+            <button
+              key={period}
+              type="button"
+              onClick={() => selectUsagePeriod(period)}
+              style={{
+                ...buttonStyle,
+                background: usagePeriod === period ? '#111827' : '#e5e7eb',
+                color: usagePeriod === period ? '#fff' : '#111827'
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          <button type="button" style={buttonStyle} onClick={() => loadUsage()} disabled={loadingUsage}>
+            {loadingUsage ? 'Refreshing…' : 'Refresh usage'}
+          </button>
+        </div>
+
+        {usageStatus ? <StatusMessage status={usageStatus} /> : null}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <StatCard label="Requests" value={formatNumber(usage?.summary?.total_requests)} />
+          <StatCard label="Tokens" value={formatNumber(usage?.summary?.total_tokens)} />
+          <StatCard label="Success rate" value={formatPercent(usage?.summary?.success_rate)} />
+          <StatCard label="Fallbacks" value={formatNumber(usage?.summary?.fallback_count)} />
+          <StatCard label="Failures" value={formatNumber(usage?.summary?.failed_count)} />
+        </div>
+
+        <div>
+          <h3>Recent events</h3>
+          {loadingUsage ? <p>Loading usage…</p> : null}
+          {!loadingUsage && (!usage?.events || usage.events.length === 0) ? <p style={{ color: '#4b5563' }}>No usage events for this period yet.</p> : null}
+          <div style={{ display: 'grid', gap: 12 }}>
+            {(usage?.events || []).map((event) => (
+              <div key={event.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, display: 'grid', gap: 6 }}>
+                <strong>{event.status}</strong>
+                <span>Requested: {event.model_requested || '—'}</span>
+                <span>Resolved: {event.model_resolved || '—'}</span>
+                <span>Tokens: {formatNumber(event.total_tokens)}</span>
+                <span>Error: {event.error_code || '—'}</span>
+                <span>Created: {formatDate(event.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section style={cardStyle}>
+        <div>
           <h2 style={{ margin: 0 }}>Connected providers</h2>
           <p style={{ margin: '6px 0 0', color: '#4b5563' }}>Providers available to your default routing preset.</p>
         </div>
@@ -407,6 +466,14 @@ export default function DashboardClient({ routerBaseUrl }) {
   );
 }
 
+function formatPercent(value) {
+  return `${Math.round(Number(value || 0) * 100)}%`;
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
 function formatDate(value) {
   if (!value) return 'Never';
   return new Date(value).toLocaleString();
@@ -429,6 +496,15 @@ function StatusMessage({ status }) {
       border: `1px solid ${isError ? '#fecaca' : '#a7f3d0'}`
     }}>
       {status.message}
+    </div>
+  );
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 14, background: '#f8fafc' }}>
+      <div style={{ color: '#6b7280', fontSize: 13 }}>{label}</div>
+      <strong style={{ fontSize: 22 }}>{value}</strong>
     </div>
   );
 }
